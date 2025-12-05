@@ -1,0 +1,209 @@
+version: '3.8'
+
+services:
+  # PostgreSQL - Primary database (source of truth)
+  postgres:
+    image: postgres:16-alpine
+    container_name: hirewire-postgres
+    environment:
+      POSTGRES_USER: hirewire
+      POSTGRES_PASSWORD: hirewire_dev_password
+      POSTGRES_DB: hirewire_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hirewire"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hirewire-network
+
+  # Redis - Cache and real-time state
+  redis:
+    image: redis:7-alpine
+    container_name: hirewire-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --requirepass hirewire_redis_password
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hirewire-network
+
+  # Neo4j - Graph database for relationship matching
+  neo4j:
+    image: neo4j:5.15-community
+    container_name: hirewire-neo4j
+    environment:
+      NEO4J_AUTH: neo4j/hirewire_neo4j_password
+      NEO4J_PLUGINS: '["apoc", "graph-data-science"]'
+      NEO4J_dbms_memory_heap_initial__size: 512m
+      NEO4J_dbms_memory_heap_max__size: 2G
+      NEO4J_dbms_memory_pagecache_size: 1G
+    ports:
+      - "7474:7474"  # HTTP
+      - "7687:7687"  # Bolt
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+      - neo4j_import:/var/lib/neo4j/import
+      - ./database/neo4j:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p hirewire_neo4j_password 'RETURN 1'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - hirewire-network
+
+  # Qdrant - Vector database for semantic search
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: hirewire-qdrant
+    ports:
+      - "6333:6333"  # HTTP API
+      - "6334:6334"  # gRPC
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      QDRANT__SERVICE__API_KEY: hirewire_qdrant_api_key
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:6333/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hirewire-network
+
+  # pgAdmin - PostgreSQL management UI (optional, for development)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: hirewire-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@hirewire.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - hirewire-network
+    profiles:
+      - tools
+
+  # Redis Commander - Redis management UI (optional, for development)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: hirewire-redis-commander
+    environment:
+      REDIS_HOSTS: local:redis:6379:0:hirewire_redis_password
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - hirewire-network
+    profiles:
+      - tools
+
+  # Resume Parser Service - AI-powered resume and job description parsing
+  resume-parser:
+    build:
+      context: ./services/resume-parser
+      dockerfile: Dockerfile
+    container_name: hirewire-resume-parser
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - hirewire-network
+    restart: unless-stopped
+
+  # API Gateway - Main backend service
+  api:
+    build:
+      context: ./services/api
+      dockerfile: Dockerfile
+    container_name: hirewire-api
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      FRONTEND_URL: http://localhost:3000
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-in-production}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: hirewire_dev
+      POSTGRES_USER: hirewire
+      POSTGRES_PASSWORD: hirewire_dev_password
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: hirewire_redis_password
+      RESUME_PARSER_URL: http://resume-parser:8000
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+      GITHUB_REDIRECT_URI: ${GITHUB_REDIRECT_URI}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      SMTP_FROM: ${SMTP_FROM}
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      resume-parser:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:4000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - hirewire-network
+    restart: unless-stopped
+    volumes:
+      - ./services/api/src:/app/src
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  neo4j_data:
+    driver: local
+  neo4j_logs:
+    driver: local
+  neo4j_import:
+    driver: local
+  qdrant_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  hirewire-network:
+    driver: bridge
