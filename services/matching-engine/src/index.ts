@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { createLogger, transports, format } from 'winston';
 import matchingRoutes from './routes/matching';
+import explanationRoutes from './routes/explanations';
 import { connectDatabases, closeDatabases } from './db/connections';
 
 dotenv.config();
@@ -39,6 +40,7 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/api/matching', matchingRoutes);
+app.use('/api/ai', explanationRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
