@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+:root {
+  /* HireWire Electric Theme */
+  --background: #0A1628;  /* Dark Navy */
+  --foreground: #FFFFFF;  /* White text */
+  --card-bg: #1E2A3A;     /* Card Gray */
+  
+  /* Brand Colors */
+  --primary: #00A8FF;      /* Electric Blue */
+  --primary-light: #33BFFF;
+  --primary-dark: #0088CC;
+  
+  --secondary: #FFD700;    /* Lightning Yellow */
+  --success: #00FF41;      /* Neon Green */
+  --warning: #FF6B35;      /* Orange Alert */
+  
+  /* Text Colors */
+  --text-secondary: #B0B8C4;
+  --text-muted: #6B7280;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-card: var(--card-bg);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Inter, var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+.bg-gradient-electric {
+  background: linear-gradient(135deg, #00A8FF 0%, #FFD700 100%);
+}
+
+.bg-gradient-dark {
+  background: linear-gradient(180deg, #0A1628 0%, #1E2A3A 100%);
+}
+
