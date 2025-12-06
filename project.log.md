@@ -1055,11 +1055,373 @@ Extended the entire platform to capture and leverage career context across all 4
 **Status:** Career context fully integrated across all 4 databases. Matching algorithm upgraded from skill-only to comprehensive career fit. Ready to test end-to-end workflow with `./database/sync-career-context.sh` then `python database/test_career_context.py`.
 
 **Next Steps:**
-1. Run database upgrade and tests
-2. Build frontend for career context questionnaire
-3. Add AI-generated match explanations using career data
+1. ~~Run database upgrade and tests~~
+2. ~~Build frontend for career context questionnaire~~
+3. ~~Add AI-generated match explanations using career data~~
 4. Implement real-time match notifications
 5. Create career insights dashboard for candidates
+
+---
+
+## December 6, 2025 (Evening) - Matching Engine Microservice & Frontend
+
+### Matching Engine Microservice
+
+**What:** Built standalone TypeScript microservice for career-enhanced matching with AI explanations.
+
+**Why:** Separate matching logic into dedicated service for scalability, performance, and independent deployment.
+
+**Implementation:**
+
+**Matching Engine Service (Port 8001):**
+- TypeScript/Express microservice
+- Connects to PostgreSQL, Neo4j, Redis
+- RESTful API with 6 endpoints
+- Winston logging for observability
+
+**Endpoints:**
+1. **POST /api/matching/score** - Calculate match score for candidate/job pair
+   - Returns overall score (0-100)
+   - Breakdown by component: skills (30%), career (25%), culture (15%), learning (15%), motivation (10%), experience (5%)
+   - Match confidence level
+   
+2. **POST /api/matching/batch** - Score multiple jobs at once
+   - Batch processing for efficiency
+   - Returns ranked list of matches
+   - Optimized database queries
+
+3. **GET /api/matching/daily/:candidateId** - Get daily matches for candidate
+   - Returns top 10 matches per day
+   - Cached in Redis for performance
+   - Filters by preferences and deal-breakers
+
+4. **POST /api/explanations/explain** - AI-generated match explanation
+   - GPT-4 Turbo powered insights
+   - Natural language explanation of why job matches
+   - Highlights strengths and growth opportunities
+   - Identifies potential concerns
+
+5. **POST /api/explanations/compare** - Compare two job opportunities
+   - Side-by-side AI analysis
+   - Career trajectory comparison
+   - Helps with decision-making
+   - Personalized recommendations
+
+6. **POST /api/explanations/insights** - Career insights for candidate
+   - Market positioning analysis
+   - Skill gap identification
+   - Career growth recommendations
+   - Salary insights
+
+**Matching Algorithm (6 Components):**
+
+```typescript
+// Component weights (total = 100%)
+skills_match: 30%        // Technical skill overlap
+career_fit: 25%          // Career goals alignment
+culture_fit: 15%         // Work style & values match
+learning_opportunity: 15% // Skill development potential
+motivation_alignment: 10% // Job motivations match
+experience_level: 5%     // Seniority appropriateness
+```
+
+**Career Context Integration:**
+- Uses 17 career context fields from PostgreSQL
+- Queries Neo4j for career graph relationships
+- Semantic search in Qdrant for similar trajectories
+- Caches results in Redis (5-minute TTL)
+
+**AI Integration:**
+- GPT-4 Turbo for match explanations
+- Structured prompts with candidate + job context
+- 800-token max length responses
+- Temperature 0.7 for consistent yet creative explanations
+- Fallback to cached responses on API errors
+
+**Files Created:**
+- services/matching-engine/package.json (dependencies)
+- services/matching-engine/tsconfig.json (TypeScript config)
+- services/matching-engine/src/index.ts (Express server)
+- services/matching-engine/src/routes/matching.ts (matching endpoints, ~450 lines)
+- services/matching-engine/src/routes/explanations.ts (AI endpoints, ~380 lines)
+- services/matching-engine/src/db/connections.ts (database clients)
+- services/matching-engine/.env.example (environment template)
+- services/matching-engine/Dockerfile (containerization)
+- docker-compose.yml (updated with matching-engine service)
+
+**API Gateway Integration:**
+- Updated services/api/src/routes/matching.ts
+- Calls matching engine via HTTP (http://localhost:8001)
+- Fallback to basic SQL matching if service unavailable
+- Added axios dependency
+
+**Dependencies:**
+- express, @types/express
+- pg, @types/pg (PostgreSQL)
+- neo4j-driver (Neo4j)
+- ioredis (Redis)
+- axios (HTTP client)
+- winston (logging)
+- dotenv (configuration)
+
+---
+
+### Next.js 15 Frontend
+
+**What:** Built modern React frontend with HireWire electric theme and career context questionnaire.
+
+**Why:** User-facing interface for onboarding, matching, and job discovery.
+
+**Implementation:**
+
+**Framework:**
+- Next.js 15 with App Router
+- TypeScript for type safety
+- Tailwind CSS v4 (CSS variables approach)
+- React 19 with Server Components
+
+**HireWire Electric Theme:**
+- Dark Navy background (#0A1628)
+- Electric Blue primary (#00A8FF)
+- Lightning Yellow secondary (#FFD700)
+- Neon Green success (#00FF41)
+- Orange Alert warning (#FF6B35)
+- Card Gray for surfaces (#1E2A3A)
+- Inter font family
+- CSS custom properties for theming
+
+**Landing Page (app/page.tsx):**
+- Hero section with gradient logo
+- Value proposition messaging
+- 3 key features (Smart Matching, Real Connections, Career Growth)
+- Platform stats (85% match score, <100ms speed, 10x better than ATS)
+- 4-step "How It Works" flow
+- Call-to-action buttons
+- Responsive mobile-first design
+
+**Career Context Questionnaire (app/onboarding/page.tsx):**
+- 6-step interactive form (~500 lines)
+- Covers all 17 career context fields
+- Progress tracking with visual feedback
+- Step navigation (prev/next buttons)
+
+**Questionnaire Steps:**
+
+1. **Career Goals**
+   - Short-term goals (1-2 years)
+   - Long-term goals (5+ years)
+   - Dream role description
+   - Free-form text inputs
+
+2. **Motivations & Deal Breakers**
+   - Top 5 motivations (multi-select from 10 options)
+   - Deal breakers (comma-separated list)
+   - Options: Career Growth, Work-Life Balance, High Compensation, etc.
+
+3. **Work Preferences**
+   - Work style preferences (select up to 4)
+   - Company culture preferences (select up to 4)
+   - Team size preference (small/medium/large/flexible)
+   - Options: Independent Work, Team Collaboration, Startup Culture, etc.
+
+4. **Learning & Growth**
+   - Skills to develop (select up to 5)
+   - Learning style (dropdown)
+   - Mentorship importance (slider 0-10)
+   - Options: Leadership, Technical Depth, System Design, ML, etc.
+
+5. **Values & Impact**
+   - Core values (select up to 5)
+   - Impact areas (select up to 4)
+   - Social responsibility importance (slider 0-10)
+   - Options: Innovation, Integrity, Healthcare, Climate Change, etc.
+
+6. **Career Trajectory & Location**
+   - Career change openness (slider 0-10)
+   - Leadership interest (slider 0-10)
+   - Remote preference (full remote/hybrid/onsite/flexible)
+   - Location flexibility (slider 0-10)
+   - Relocation willingness (slider 0-10)
+
+**Reusable Components (components/):**
+
+1. **ProgressBar** - Visual step progress
+   - Shows current step and percentage
+   - Gradient fill animation
+   - Updates dynamically as user progresses
+
+2. **MultiSelect** - Multi-selection dropdown
+   - Checkbox interface
+   - Max selection limits
+   - Visual selected state
+   - Search/filter capability
+   - Used for motivations, skills, values, etc.
+
+3. **SliderInput** - Range slider with feedback
+   - Visual value display above thumb
+   - Left/right labels
+   - Gradient track showing selected range
+   - Used for importance ratings
+
+**API Client (lib/api.ts):**
+- TypeScript interfaces matching backend schema
+- CareerContextData type (17 fields)
+- Methods:
+  - submitQuestionnaire(candidateId, data)
+  - getCareerContext(candidateId)
+  - getDailyMatches(candidateId)
+  - getMatchScore(candidateId, jobId)
+  - getMatchExplanation(candidateId, jobId)
+  - compareJobs(candidateId, jobId1, jobId2)
+  - uploadResume(file)
+- Error handling with try/catch
+- Environment-based URLs
+
+**Tailwind CSS v4 Approach:**
+- No tailwind.config.ts file
+- Uses postcss.config.mjs with @tailwindcss/postcss
+- CSS variables defined in globals.css
+- @theme inline for custom theme tokens
+- @import "tailwindcss" directive
+- CSS-first configuration
+
+**Environment Configuration (.env.local.example):**
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:4000
+NEXT_PUBLIC_MATCHING_ENGINE_URL=http://localhost:8001
+NEXT_PUBLIC_WS_URL=ws://localhost:4000
+```
+
+**Files Created:**
+- web/app/layout.tsx (root layout with Inter font)
+- web/app/page.tsx (landing page)
+- web/app/globals.css (theme variables + Tailwind)
+- web/app/onboarding/page.tsx (6-step questionnaire, ~500 lines)
+- web/components/ProgressBar.tsx (progress UI)
+- web/components/MultiSelect.tsx (multi-select dropdown)
+- web/components/SliderInput.tsx (range slider)
+- web/lib/api.ts (TypeScript API client)
+- web/.env.local.example (environment template)
+- web/README.md (frontend documentation)
+- web/package.json (Next.js 15 dependencies, 426 packages)
+- web/tsconfig.json (TypeScript config)
+- web/postcss.config.mjs (Tailwind PostCSS)
+- web/next.config.ts (Next.js config)
+
+**Features:**
+- Fully responsive design
+- Hover animations and transitions
+- Gradient backgrounds
+- Form validation ready
+- Navigation between steps
+- API integration prepared
+- Router navigation on completion
+
+**Design System:**
+- Consistent spacing (4px grid)
+- Border radius (lg = 0.5rem)
+- Box shadows for depth
+- Opacity hover states
+- Transform scale on buttons
+- Gradient text for headings
+- Electric theme throughout
+
+---
+
+### Commits Summary (December 6, 2025)
+
+**Total Commits Today:** 5
+
+1. **Morning:** "feat: Add career context to database schema and AI extraction"
+   - 17 career context fields in PostgreSQL
+   - Enhanced resume parser with GPT-4 extraction
+   - Career context questionnaire API endpoints
+
+2. **Mid-Day:** "feat: Database upgrades for career context matching"
+   - Neo4j career graph schema
+   - Qdrant semantic search setup
+   - Redis caching layer
+   - Comprehensive test suite
+   - Sync scripts for all databases
+
+3. **Afternoon:** "feat: Add matching engine microservice with career-enhanced algorithm"
+   - TypeScript/Express service on port 8001
+   - 6-component matching algorithm
+   - PostgreSQL, Neo4j, Redis integration
+   - Batch processing endpoints
+
+4. **Evening:** "feat: Add AI explanation endpoints to matching engine"
+   - GPT-4 Turbo powered insights
+   - Match explanations
+   - Job comparison
+   - Career insights
+   - 3 new endpoints
+
+5. **Evening:** "feat: Add Next.js 15 frontend with HireWire electric theme"
+   - Landing page with electric theme
+   - Responsive design
+   - Inter font, gradients, animations
+   - Environment configuration
+
+6. **Evening:** "feat: Add career context questionnaire UI"
+   - 6-step interactive form
+   - 3 reusable components (ProgressBar, MultiSelect, SliderInput)
+   - TypeScript API client
+   - Full integration with backend schema
+
+---
+
+### Summary: What's New (December 6 Evening)
+
+**Backend Services (3 Microservices):**
+1. API Gateway (Node.js/Express, port 4000) - Auth, profiles, onboarding
+2. Resume Parser (Python/FastAPI, port 8000) - AI extraction with GPT-4
+3. **Matching Engine (TypeScript/Express, port 8001)** - NEW
+   - Career-enhanced matching (6 components)
+   - AI explanations (GPT-4)
+   - Batch processing
+   - Redis caching
+
+**Frontend Application:**
+- Next.js 15 with App Router
+- TypeScript + Tailwind CSS v4
+- Electric dark theme
+- Landing page
+- 6-step career questionnaire
+- Reusable UI components
+- API client library
+
+**Matching Intelligence:**
+- Skill overlap (30%)
+- Career fit (25%)
+- Culture alignment (15%)
+- Learning opportunities (15%)
+- Motivation match (10%)
+- Experience level (5%)
+
+**AI Capabilities:**
+- Resume parsing (GPT-4)
+- Career context extraction
+- Match explanations (natural language)
+- Job comparisons (side-by-side analysis)
+- Career insights (personalized recommendations)
+
+**Files Added Today (18 new files, ~2,500 lines):**
+1. services/matching-engine/* (8 files, ~1,200 lines)
+2. web/app/* (4 files, ~800 lines)
+3. web/components/* (3 files, ~300 lines)
+4. web/lib/api.ts (1 file, ~150 lines)
+
+**Status:** Full-stack platform taking shape. Backend has intelligent matching with AI explanations. Frontend has onboarding flow with career questionnaire. Ready for authentication, job swipe interface, and real-time notifications.
+
+**Next Steps:**
+1. Add authentication (JWT + sessions)
+2. Build job swipe interface (Tinder-style)
+3. Implement real-time WebSocket notifications
+4. Create match dashboard
+5. Add chat interface
+6. Build company portal
+7. Deploy to staging environment
 
 ---
 
