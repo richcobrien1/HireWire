@@ -810,6 +810,259 @@ Job hunting shouldn't be depressing work. Matching should be automatic and accur
 
 ---
 
+## December 6, 2025 - Career Context Enhancement & Database Upgrades
+
+### Session Focus: Adding "Human Layer" to Job Matching
+
+**Problem Identified:**
+Traditional resume parsing only captures ATS data (skills, experience, titles). This misses the critical "human layer" - what candidates actually want, their motivations, career aspirations, and culture preferences. Matching on skills alone is insufficient for finding truly great fits.
+
+**Solution Implemented:**
+Extended the entire platform to capture and leverage career context across all 4 databases, enabling matching on:
+- Past: What motivated them before, lessons learned, career pivots
+- Present: Current interests, ideal work environment, learning priorities, deal-breakers
+- Future: Career trajectory, 5-year goals, skills to develop, long-term vision
+
+---
+
+### Phase 1: Career Context Data Model (Completed)
+
+**PostgreSQL Schema Extension:**
+✅ Added 17 new career context fields to `candidate_profiles` table:
+- Past: past_motivations[], proudest_achievements[], lessons_learned, career_pivots
+- Present: current_interests[], ideal_work_environment, learning_priorities[], deal_breakers[], motivations[]
+- Future: career_trajectory, five_year_goals[], dream_companies[], skills_to_develop[], long_term_vision
+✅ Created GIN indexes for array field searches
+✅ Migration script: database/migrations/002_add_career_context.sql
+
+**Files Created:**
+- database/migrations/002_add_career_context.sql
+- Updated: database/migrations/001_initial_schema.sql (with career fields)
+
+---
+
+### Phase 2: AI Career Context Extraction (Completed)
+
+**Enhanced Resume Parser:**
+✅ Extended AI parsing to extract career context from resumes
+✅ Added CareerContext model to ResumeData schema
+✅ Enhanced GPT-4 prompt to identify motivations, goals, interests from:
+  - Objective/summary statements
+  - Achievement descriptions
+  - Project narratives
+✅ Returns career context when found in resume
+
+**Career Context Questionnaire API:**
+✅ Created comprehensive 3-section questionnaire:
+  - Past Reflection (5-7 min): Career journey, motivations, achievements
+  - Present Priorities (3-4 min): Current interests, deal-breakers, ideal environment
+  - Future Vision (4-5 min): Goals, trajectory, skills to develop
+✅ Multiple question types: multiple choice, checkboxes, text input, sliders
+✅ Skippable to reduce onboarding friction
+✅ Returns structured data matching PostgreSQL schema
+
+**Integrated into Onboarding Flow:**
+✅ Resume upload → AI extraction includes career context
+✅ If career context found → skip questionnaire
+✅ If not found → redirect to questionnaire
+✅ Career context saved to database with candidate profile
+
+**Files Created/Updated:**
+- services/resume-parser/main.py (enhanced with CareerContext)
+- services/api/src/routes/career-context.ts (questionnaire API)
+- services/api/src/routes/onboarding.ts (integrated career context)
+- services/api/src/index.ts (registered career-context routes)
+
+---
+
+### Phase 3: Database Upgrades for Career Context (Completed)
+
+**Neo4j Career Graph Schema:**
+✅ Created 5 new node types:
+  - Interest: What excites candidates (Technical, Product, Growth categories)
+  - Motivation: What drives them (Challenge, Growth, Impact, Financial, etc.)
+  - CareerGoal: What they want to achieve
+  - WorkCulture: Ideal environments (pace, size, location types)
+  - CareerTrajectory: Career paths (IC, Management, Leadership, Entrepreneurship)
+✅ Added 8 relationship types:
+  - INTERESTED_IN: Candidate → Interest
+  - MOTIVATED_BY: Candidate → Motivation (with priority)
+  - PREFERS_CULTURE: Candidate → WorkCulture
+  - PURSUING_GOAL: Candidate → CareerGoal
+  - WANTS_TO_LEARN: Candidate → Skill
+  - OFFERS_CULTURE: Company → WorkCulture
+  - INVOLVES: Job → Interest
+  - TEACHES: Job → Skill (learning opportunities)
+✅ Seeded initial data:
+  - 9 common interests (AI/ML, System design, Mentoring, etc.)
+  - 10 motivations (Technical challenges, Growth, Impact, Balance, etc.)
+  - 9 work cultures (Fast-paced startup, Remote-first, etc.)
+  - 5 career trajectories with progression paths
+✅ Created indexes and constraints for performance
+
+**Qdrant Semantic Career Collections:**
+✅ Created 4 new vector collections (768-dim embeddings):
+  - candidate_career_context: Semantic embeddings of motivations, interests, goals
+  - job_career_opportunities: Embeddings of growth, culture, learning offers
+  - career_trajectory_patterns: Common career progression patterns
+  - work_culture_embeddings: Semantic representations of work environments
+✅ Seeded initial embeddings:
+  - 8 work culture types with characteristics
+  - 5 career trajectory patterns (Mid→Senior, Senior→Staff, etc.)
+✅ Enables semantic matching: "Remote-first, small team" finds similar cultures
+
+**Redis Career Caching Patterns:**
+✅ Created CareerContextCache class with methods for:
+  - Career profile caching (1 hour TTL)
+  - Career match results (30 min TTL)
+  - Culture fit scores with AI explanations (1 hour TTL)
+  - Learning opportunities (30 min TTL)
+  - Trajectory matches and insights (1 hour TTL)
+  - Match score breakdowns
+  - Feature usage tracking
+✅ Cache invalidation methods for profile/job updates
+✅ Real-time counters for analytics
+
+**Database Sync Scripts:**
+✅ Created automated upgrade scripts (sync-career-context.sh/bat):
+  - Health checks for all 4 databases
+  - Applies Neo4j career schema
+  - Creates Qdrant collections with embeddings
+  - Validates successful setup
+  - Cross-platform support (Linux + Windows)
+
+**Files Created:**
+- database/neo4j/002_career_context_schema.cypher (233 lines)
+- database/seeds/setup_career_context_qdrant.py (258 lines)
+- database/redis/career_context_cache.py (342 lines)
+- database/sync-career-context.sh (148 lines)
+- database/sync-career-context.bat (122 lines)
+
+---
+
+### Phase 4: Career-Enhanced Matching Algorithm (Completed)
+
+**New 6-Component Matching System:**
+✅ Built CareerEnhancedMatcher class using all 4 databases
+✅ Matching components with weights:
+  1. Skill Overlap (30%) - Traditional skill matching
+  2. Career Fit (25%) - Trajectory alignment + 5-year goals + learning match
+  3. Culture Fit (15%) - Semantic matching of ideal environment vs company culture
+  4. Learning Opportunities (15%) - Skills to develop vs job teaches
+  5. Motivation Alignment (10%) - What drives candidate vs job characteristics
+  6. Experience Match (5%) - Years of experience fit
+✅ Returns comprehensive match result:
+  - Overall score (0-1)
+  - Component breakdown with individual scores
+  - Human-readable reasons for each component
+  - Recommendations: Excellent (85%+), Strong (70%+), Moderate (55%+), Weak (<55%)
+✅ Methods for:
+  - calculate_match_score(): Single candidate-job pair
+  - find_best_matches(): Top N matches for candidate
+  - Career profile fetching from PostgreSQL
+  - Neo4j graph traversal for trajectories
+  - Qdrant semantic search for culture fit
+  - Motivation keyword matching
+
+**How It Works:**
+1. Fetch candidate career profile from PostgreSQL (17 fields)
+2. Fetch job opportunities and requirements
+3. Calculate skill overlap (existing logic)
+4. Query Neo4j for career trajectory alignment
+5. Search Qdrant for semantic culture fit
+6. Compare skills_to_develop vs job's teaching opportunities
+7. Match motivations against job description keywords
+8. Combine scores with weighted average
+9. Generate human-readable explanations
+10. Return ranked matches with reasons
+
+**Files Created:**
+- services/matching-engine/career_matcher.py (430 lines)
+
+---
+
+### Phase 5: Testing & Validation Suite (Completed)
+
+**Comprehensive Integration Tests:**
+✅ Created test_career_context.py with 5 test suites:
+  1. PostgreSQL Schema Test: Validates 14 career columns, indexes
+  2. Neo4j Graph Test: Counts nodes, checks constraints, samples data
+  3. Qdrant Collections Test: Verifies 4 collections exist, tests search
+  4. Redis Cache Test: Tests profile/breakdown/feature caching
+  5. Cross-Database Scenario: End-to-end career matching workflow
+✅ Saves results to career_context_test_results.json
+✅ Returns PASS/FAIL status for each test
+✅ Cleanup after tests (no data pollution)
+
+**Testing Documentation:**
+✅ Created TESTING_CAREER_CONTEXT.md with:
+  - Prerequisites and setup instructions
+  - How to run full test suite
+  - Individual database test commands
+  - Manual query examples for each database
+  - Troubleshooting guide
+  - What's being tested (detailed breakdown)
+  - Next steps after tests pass
+
+**Files Created:**
+- database/test_career_context.py (479 lines)
+- database/TESTING_CAREER_CONTEXT.md (comprehensive guide)
+
+---
+
+### Summary: What's New
+
+**Database Capabilities:**
+- PostgreSQL: Stores 17 career context fields per candidate
+- Neo4j: Graph of interests, motivations, cultures, trajectories with relationships
+- Qdrant: Semantic search across career contexts (768-dim vectors)
+- Redis: Fast caching of career profiles and match results
+
+**API Capabilities:**
+- POST /api/career-context/questions: Get questionnaire
+- POST /api/career-context: Save career context responses
+- POST /api/career-context/skip: Skip questionnaire
+- Enhanced POST /api/onboarding/resume: Returns career context if found
+
+**Matching Intelligence:**
+- Matches on skills AND career fit
+- Matches on experience AND growth opportunities
+- Matches on salary AND motivations
+- Matches on culture preferences AND company environment
+- Provides explainable match scores with reasons
+
+**Developer Tools:**
+- One-command database upgrade: ./database/sync-career-context.sh
+- Comprehensive test suite: python database/test_career_context.py
+- Detailed testing documentation
+- Redis cache monitoring
+- Feature usage analytics
+
+**Files Added (8 new files, 2,283 lines of code):**
+1. database/neo4j/002_career_context_schema.cypher
+2. database/seeds/setup_career_context_qdrant.py
+3. database/redis/career_context_cache.py
+4. database/sync-career-context.sh
+5. database/sync-career-context.bat
+6. database/test_career_context.py
+7. database/TESTING_CAREER_CONTEXT.md
+8. services/matching-engine/career_matcher.py
+
+**Commits:**
+- Commit 1: "feat: Add career context to database schema and AI extraction"
+- Commit 2: "feat: Database upgrades for career context matching"
+
+**Status:** Career context fully integrated across all 4 databases. Matching algorithm upgraded from skill-only to comprehensive career fit. Ready to test end-to-end workflow with `./database/sync-career-context.sh` then `python database/test_career_context.py`.
+
+**Next Steps:**
+1. Run database upgrade and tests
+2. Build frontend for career context questionnaire
+3. Add AI-generated match explanations using career data
+4. Implement real-time match notifications
+5. Create career insights dashboard for candidates
+
+---
+
 ## References
 
 - **PROJECT_VISION.md** - Complete platform vision, features, architecture, and business model
