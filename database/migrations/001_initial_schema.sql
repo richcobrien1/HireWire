@@ -120,6 +120,34 @@ CREATE TABLE candidate_profiles (
     resume_url TEXT,
     resume_parsed JSONB,
     
+    -- Career Context (The Human Layer)
+    -- Past: Why I'm here
+    past_motivations TEXT[], -- What drove past career decisions
+    proudest_achievements TEXT[], -- Key accomplishments they're proud of
+    lessons_learned TEXT, -- What they learned from their journey
+    career_pivots TEXT, -- Major career changes and why
+    
+    -- Present: What I want now
+    current_interests TEXT[], -- What excites them about their work
+    ideal_work_environment TEXT, -- Team culture, work style preferences
+    learning_priorities TEXT[], -- Skills/areas they want to develop
+    work_life_balance_needs TEXT, -- Flexibility, hours, boundaries
+    deal_breakers TEXT[], -- Non-negotiables (e.g., "no on-call", "remote only")
+    motivations TEXT[], -- What drives them (impact, growth, money, flexibility)
+    
+    -- Future: Where I'm going
+    career_trajectory VARCHAR(50) CHECK (career_trajectory IN ('individual_contributor', 'management', 'leadership', 'entrepreneurship', 'exploring')),
+    five_year_goals TEXT[], -- Where they see themselves
+    dream_companies TEXT[], -- Companies they'd love to work for
+    industries_of_interest TEXT[], -- Industries they're curious about
+    skills_to_develop TEXT[], -- Technical/soft skills they want to build
+    side_projects_interests TEXT, -- Entrepreneurial/passion projects
+    long_term_vision TEXT, -- Their ultimate career destination
+    
+    -- Enrichment metadata
+    career_context_completed BOOLEAN DEFAULT FALSE,
+    career_context_updated_at TIMESTAMP,
+    
     -- Metadata
     profile_completed BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT NOW(),

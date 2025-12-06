@@ -44,6 +44,19 @@ class Project(BaseModel):
     technologies: List[str]
     url: Optional[str]
 
+class CareerContext(BaseModel):
+    """The human layer - motivations, interests, and ambitions"""
+    past_motivations: List[str] = []
+    proudest_achievements: List[str] = []
+    lessons_learned: Optional[str]
+    current_interests: List[str] = []
+    learning_priorities: List[str] = []
+    motivations: List[str] = []
+    career_trajectory: Optional[str]  # "individual_contributor", "management", etc.
+    five_year_goals: List[str] = []
+    skills_to_develop: List[str] = []
+    long_term_vision: Optional[str]
+
 class ResumeData(BaseModel):
     name: Optional[str]
     email: Optional[str]
@@ -57,6 +70,7 @@ class ResumeData(BaseModel):
     projects: List[Project] = []
     target_salary: Optional[int]
     preferred_locations: List[str] = []
+    career_context: Optional[CareerContext]  # NEW: The human layer
 
 class JobRequirements(BaseModel):
     title: str
@@ -167,14 +181,28 @@ Required JSON structure:
     }}
   ],
   "target_salary": salary expectation as integer or null,
-  "preferred_locations": ["city/state"] or []
+  "preferred_locations": ["city/state"] or [],
+  "career_context": {{
+    "past_motivations": ["reasons for career decisions if mentioned"],
+    "proudest_achievements": ["key accomplishments highlighted"],
+    "lessons_learned": "What they learned from their journey" or null,
+    "current_interests": ["what excites them, passions mentioned"],
+    "learning_priorities": ["skills or areas they want to develop"],
+    "motivations": ["what drives them: growth, impact, innovation, etc"],
+    "career_trajectory": "individual_contributor" or "management" or "leadership" or "entrepreneurship" or null,
+    "five_year_goals": ["career goals if mentioned"],
+    "skills_to_develop": ["technical or soft skills they want to learn"],
+    "long_term_vision": "Their ultimate career destination" or null
+  }} or null
 }}
 
 Rules:
 - Extract years_experience by summing up work history durations
 - Only include skills that are clearly technical/professional skills
 - If dates are incomplete, use YYYY-01 format
-- Extract only factual information, don't infer
+- Extract factual information from resume
+- For career_context, look for: objective statements, cover letter language, achievement descriptions that reveal motivation
+- If career context isn't explicitly in resume, set career_context to null
 - Return valid JSON only
 
 Resume text:

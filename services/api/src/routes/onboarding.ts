@@ -76,6 +76,38 @@ router.post('/onboarding/candidate/upload-resume',
         ]
       );
       
+      // If career context was extracted from resume, save it
+      if (profileData.career_context) {
+        const cc = profileData.career_context;
+        await pool.query(`
+          UPDATE candidate_profiles SET
+            past_motivations = $1,
+            proudest_achievements = $2,
+            lessons_learned = $3,
+            current_interests = $4,
+            learning_priorities = $5,
+            motivations = $6,
+            career_trajectory = $7,
+            five_year_goals = $8,
+            skills_to_develop = $9,
+            long_term_vision = $10,
+            career_context_updated_at = NOW()
+          WHERE user_id = $11
+        `, [
+          cc.past_motivations || [],
+          cc.proudest_achievements || [],
+          cc.lessons_learned,
+          cc.current_interests || [],
+          cc.learning_priorities || [],
+          cc.motivations || [],
+          cc.career_trajectory,
+          cc.five_year_goals || [],
+          cc.skills_to_develop || [],
+          cc.long_term_vision,
+          userId
+        ]);
+      }
+      
       // Update user name if available
       if (profileData.name) {
         await pool.query(
@@ -145,7 +177,8 @@ router.post('/onboarding/candidate/upload-resume',
       res.json({ 
         success: true,
         profile: profileData,
-        next_step: 'review'
+        has_career_context: !!profileData.career_context,
+        next_step: profileData.career_context ? 'review' : 'career_context'
       });
       
     } catch (error) {

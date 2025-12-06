@@ -13,6 +13,7 @@ dotenv.config();
 import authRoutes from './routes/auth';
 import onboardingRoutes from './routes/onboarding';
 import profileRoutes from './routes/profile';
+import careerContextRoutes from './routes/career-context';
 import matchingRoutes from './routes/matching';
 import swipeRoutes from './routes/swipe';
 import messageRoutes from './routes/messages';
@@ -51,6 +52,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/onboarding', onboardingRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/career-context', careerContextRoutes);
 app.use('/api/matching', matchingRoutes);
 app.use('/api/swipe', swipeRoutes);
 app.use('/api/messages', messageRoutes);
