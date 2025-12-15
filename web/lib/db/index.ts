@@ -16,6 +16,9 @@ import type {
   SyncQueueItem,
   SyncMetadata,
   UserPreferences,
+  AIConversation,
+  AIMessage,
+  AISuggestion,
 } from './types';
 
 // Define the database schema
@@ -31,6 +34,9 @@ export class HireWireDB extends Dexie {
   syncQueue!: EntityTable<SyncQueueItem, 'id'>;
   metadata!: EntityTable<SyncMetadata, 'key'>;
   preferences!: EntityTable<UserPreferences, 'userId'>;
+  aiConversations!: EntityTable<AIConversation, 'id'>;
+  aiMessages!: EntityTable<AIMessage, 'id'>;
+  aiSuggestions!: EntityTable<AISuggestion, 'id'>;
 
   constructor() {
     super('hirewire-db');
@@ -47,6 +53,9 @@ export class HireWireDB extends Dexie {
       syncQueue: '++id, status, priority, createdAt, nextRetryAt, entity',
       metadata: 'key, updatedAt',
       preferences: 'userId, updatedAt',
+      aiConversations: 'id, userId, type, status, createdAt, lastMessageAt',
+      aiMessages: 'id, conversationId, timestamp, role',
+      aiSuggestions: 'id, userId, type, priority, dismissed, createdAt, expiresAt',
     });
 
     // Add hooks for automatic timestamping

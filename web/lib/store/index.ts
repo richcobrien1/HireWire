@@ -20,8 +20,12 @@ import type {
   UnlockedAchievement,
   GamificationState,
   UserPreferences,
+  AIConversation,
+  AIMessage,
+  AISuggestion,
 } from '../types';
 import { db, queueSync } from '../db';
+import { aiService } from '../ai';
 
 // ==================== STORE INTERFACE ====================
 
@@ -84,6 +88,26 @@ interface AppStore {
   setGamification: (state: GamificationState) => void;
   unlockAchievement: (achievementId: string) => Promise<void>;
   addXP: (amount: number) => void;
+  
+  // ==================== AI STATE ====================
+  ai: {
+    conversations: AIConversation[];
+    activeConversationId: string | null;
+    messages: Record<string, AIMessage[]>;
+    isStreaming: boolean;
+    streamingConversationId: string | null;
+    suggestions: AISuggestion[];
+    isLoading: boolean;
+    error: string | null;
+  };
+  
+  startAIConversation: (type: AIConversation['type'], metadata?: AIConversation['metadata']) => Promise<string>;
+  sendAIMessage: (conversationId: string, content: string) => Promise<void>;
+  getAIConversation: (conversationId: string) => Promise<void>;
+  rateAIMessage: (messageId: string, feedback: AIMessage['feedback']) => Promise<void>;
+  archiveAIConversation: (conversationId: string) => Promise<void>;
+  loadAISuggestions: () => Promise<void>;
+  dismissAISuggestion: (suggestionId: string) => Promise<void>;
   
   // ==================== SYNC STATE ====================
   sync: SyncState;
@@ -154,6 +178,17 @@ const initialUIState: UIState = {
   modals: {},
   notifications: [],
   loading: {},
+};
+
+const initialAIState = {
+  conversations: [],
+  activeConversationId: null,
+  messages: {},
+  isStreaming: false,
+  streamingConversationId: null,
+  suggestions: [],
+  isLoading: false,
+  error: null,
 };
 
 // ==================== STORE IMPLEMENTATION ====================
@@ -561,6 +596,239 @@ export const useAppStore = create<AppStore>()(
           state.ui.loading[key] = loading;
         }),
         
+        // ==================== AI ====================
+        ai: initialAIState,
+        
+        startAIConversation: async (type, metadata) => {
+          set((state) => { state.ai.isLoading = true; state.ai.error = null; });
+          
+          try {
+            const conversationId = await aiService.startConversation(type, metadata);
+            
+            // Create conversation in IndexedDB
+            const conversation: AIConversation = {
+              id: conversationId,
+              userId: get().auth.user?.id || '',
+              type,
+              title: `${type.replace('_', ' ')} conversation`,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              lastMessageAt: new Date(),
+              messageCount: 0,
+              status: 'active',
+              metadata,
+            };
+            
+            await db.aiConversations.add(conversation);
+            
+            set((state) => {
+              state.ai.conversations.push(conversation);
+              state.ai.activeConversationId = conversationId;
+              state.ai.messages[conversationId] = [];
+              state.ai.isLoading = false;
+            });
+            
+            return conversationId;
+          } catch (error) {
+            set((state) => {
+              state.ai.error = error instanceof Error ? error.message : 'Failed to start conversation';
+              state.ai.isLoading = false;
+            });
+            throw error;
+          }
+        },
+        
+        sendAIMessage: async (conversationId, content) => {
+          const userMessage: AIMessage = {
+            id: `msg_${Date.now()}`,
+            conversationId,
+            role: 'user',
+            content,
+            timestamp: new Date(),
+          };
+          
+          // Add user message immediately
+          await db.aiMessages.add(userMessage);
+          set((state) => {
+            if (!state.ai.messages[conversationId]) {
+              state.ai.messages[conversationId] = [];
+            }
+            state.ai.messages[conversationId].push(userMessage);
+            state.ai.isStreaming = true;
+            state.ai.streamingConversationId = conversationId;
+          });
+          
+          // Create assistant message placeholder
+          const assistantMessageId = `msg_${Date.now() + 1}`;
+          let assistantContent = '';
+          
+          const assistantMessage: AIMessage = {
+            id: assistantMessageId,
+            conversationId,
+            role: 'assistant',
+            content: '',
+            timestamp: new Date(),
+            streaming: true,
+          };
+          
+          await db.aiMessages.add(assistantMessage);
+          set((state) => {
+            state.ai.messages[conversationId].push(assistantMessage);
+          });
+          
+          try {
+            // Stream response
+            await aiService.sendMessage(
+              conversationId,
+              content,
+              (chunk: string) => {
+                assistantContent += chunk;
+                set((state) => {
+                  const messages = state.ai.messages[conversationId];
+                  const lastMessage = messages[messages.length - 1];
+                  if (lastMessage && lastMessage.id === assistantMessageId) {
+                    lastMessage.content = assistantContent;
+                  }
+                });
+              },
+              async (fullMessage: string) => {
+                // Update final message in DB
+                await db.aiMessages.update(assistantMessageId, {
+                  content: fullMessage,
+                  streaming: false,
+                });
+                
+                // Update conversation
+                await db.aiConversations.update(conversationId, {
+                  lastMessageAt: new Date(),
+                  updatedAt: new Date(),
+                  messageCount: get().ai.messages[conversationId].length,
+                });
+                
+                set((state) => {
+                  const messages = state.ai.messages[conversationId];
+                  const lastMessage = messages[messages.length - 1];
+                  if (lastMessage && lastMessage.id === assistantMessageId) {
+                    lastMessage.streaming = false;
+                  }
+                  state.ai.isStreaming = false;
+                  state.ai.streamingConversationId = null;
+                });
+              },
+              (error: Error) => {
+                set((state) => {
+                  state.ai.error = error.message;
+                  state.ai.isStreaming = false;
+                  state.ai.streamingConversationId = null;
+                });
+              }
+            );
+          } catch (error) {
+            set((state) => {
+              state.ai.error = error instanceof Error ? error.message : 'Failed to send message';
+              state.ai.isStreaming = false;
+              state.ai.streamingConversationId = null;
+            });
+            throw error;
+          }
+        },
+        
+        getAIConversation: async (conversationId) => {
+          set((state) => { state.ai.isLoading = true; });
+          
+          try {
+            const conversation = await db.aiConversations.get(conversationId);
+            const messages = await db.aiMessages.where('conversationId').equals(conversationId).toArray();
+            
+            if (conversation) {
+              set((state) => {
+                const existing = state.ai.conversations.find(c => c.id === conversationId);
+                if (!existing) {
+                  state.ai.conversations.push(conversation);
+                }
+                state.ai.messages[conversationId] = messages;
+                state.ai.activeConversationId = conversationId;
+                state.ai.isLoading = false;
+              });
+            }
+          } catch (error) {
+            set((state) => {
+              state.ai.error = error instanceof Error ? error.message : 'Failed to load conversation';
+              state.ai.isLoading = false;
+            });
+            throw error;
+          }
+        },
+        
+        rateAIMessage: async (messageId, feedback) => {
+          try {
+            await aiService.rateMessage(messageId, feedback);
+            await db.aiMessages.update(messageId, { feedback });
+            
+            set((state) => {
+              // Update message in state
+              for (const conversationId in state.ai.messages) {
+                const message = state.ai.messages[conversationId].find(m => m.id === messageId);
+                if (message) {
+                  message.feedback = feedback;
+                  break;
+                }
+              }
+            });
+          } catch (error) {
+            console.error('Failed to rate message:', error);
+            throw error;
+          }
+        },
+        
+        archiveAIConversation: async (conversationId) => {
+          try {
+            await aiService.archiveConversation(conversationId);
+            await db.aiConversations.update(conversationId, { status: 'archived' });
+            
+            set((state) => {
+              const conversation = state.ai.conversations.find(c => c.id === conversationId);
+              if (conversation) {
+                conversation.status = 'archived';
+              }
+              if (state.ai.activeConversationId === conversationId) {
+                state.ai.activeConversationId = null;
+              }
+            });
+          } catch (error) {
+            console.error('Failed to archive conversation:', error);
+            throw error;
+          }
+        },
+        
+        loadAISuggestions: async () => {
+          try {
+            const suggestions = await aiService.getSuggestions();
+            await db.aiSuggestions.bulkPut(suggestions);
+            
+            set((state) => {
+              state.ai.suggestions = suggestions;
+            });
+          } catch (error) {
+            console.error('Failed to load suggestions:', error);
+            throw error;
+          }
+        },
+        
+        dismissAISuggestion: async (suggestionId) => {
+          try {
+            await aiService.dismissSuggestion(suggestionId);
+            await db.aiSuggestions.update(suggestionId, { dismissed: true });
+            
+            set((state) => {
+              state.ai.suggestions = state.ai.suggestions.filter(s => s.id !== suggestionId);
+            });
+          } catch (error) {
+            console.error('Failed to dismiss suggestion:', error);
+            throw error;
+          }
+        },
+        
         // ==================== PREFERENCES ====================
         preferences: null,
         
@@ -651,5 +919,16 @@ export const useNotifications = () => useAppStore((state) => state.ui.notificati
 export const useGamification = () => useAppStore((state) => state.gamification);
 export const useLevel = () => useAppStore((state) => state.gamification?.level || 1);
 export const useXP = () => useAppStore((state) => state.gamification?.xp || 0);
+
+// AI selectors
+export const useAIConversations = () => useAppStore((state) => state.ai.conversations);
+export const useActiveAIConversation = () => {
+  const conversations = useAppStore((state) => state.ai.conversations);
+  const activeId = useAppStore((state) => state.ai.activeConversationId);
+  return conversations.find(c => c.id === activeId) || null;
+};
+export const useAIMessages = (conversationId: string) => useAppStore((state) => state.ai.messages[conversationId] || []);
+export const useIsAIStreaming = () => useAppStore((state) => state.ai.isStreaming);
+export const useAISuggestions = () => useAppStore((state) => state.ai.suggestions);
 
 export default useAppStore;

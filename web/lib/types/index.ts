@@ -556,7 +556,162 @@ export type WebSocketEvent =
   | { type: 'achievement.unlocked'; data: UnlockedAchievement }
   | { type: 'sync.required'; data: { entities: string[] } }
   | { type: 'typing.start'; data: { matchId: string; userId: string } }
-  | { type: 'typing.stop'; data: { matchId: string; userId: string } };
+  | { type: 'typing.stop'; data: { matchId: string; userId: string } }
+  | { type: 'ai.message'; data: AIMessage }
+  | { type: 'ai.suggestion'; data: AISuggestion };
+
+// ==================== AI & RAG ====================
+
+export interface AIConversation {
+  id: string;
+  userId: string;
+  type: 'career_coach' | 'match_explainer' | 'resume_feedback' | 'general';
+  title: string;
+  createdAt: Date;
+  updatedAt: Date;
+  lastMessageAt: Date;
+  messageCount: number;
+  status: 'active' | 'archived';
+  metadata?: {
+    jobId?: string;
+    matchId?: string;
+    resumeId?: string;
+    context?: Record<string, any>;
+  };
+}
+
+export interface AIMessage {
+  id: string;
+  conversationId: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: Date;
+  metadata?: {
+    intent?: string;
+    confidence?: number;
+    contextUsed?: string[];
+    modelUsed?: string;
+    tokensUsed?: number;
+    ragSources?: RAGSource[];
+  };
+  feedback?: {
+    helpful: boolean;
+    rating?: 1 | 2 | 3 | 4 | 5;
+    comment?: string;
+  };
+  streaming?: boolean;
+}
+
+export interface AISuggestion {
+  id: string;
+  userId: string;
+  type: 'career_tip' | 'job_recommendation' | 'skill_suggestion' | 'interview_tip' | 'resume_improvement';
+  title: string;
+  content: string;
+  priority: 'low' | 'medium' | 'high';
+  createdAt: Date;
+  expiresAt?: Date;
+  dismissed: boolean;
+  actionTaken: boolean;
+  metadata?: {
+    relatedJobId?: string;
+    relatedSkillId?: string;
+    relatedMatchId?: string;
+    actionUrl?: string;
+  };
+}
+
+export interface RAGSource {
+  id: string;
+  type: 'career_context' | 'job_description' | 'skill' | 'conversation_history' | 'resume';
+  content: string;
+  relevanceScore: number;
+  metadata?: Record<string, any>;
+}
+
+export interface QueryIntent {
+  type: 'career_advice' | 'match_question' | 'resume_feedback' | 'job_inquiry' | 'general';
+  entities: {
+    jobId?: string;
+    skillName?: string;
+    companyName?: string;
+    role?: string;
+  };
+  complexity: 'simple' | 'complex' | 'multi_turn';
+  confidence: number;
+}
+
+export interface RAGContext {
+  careerContext: RAGSource[];
+  jobs: RAGSource[];
+  skills: RAGSource[];
+  conversationHistory: RAGSource[];
+  resume?: RAGSource;
+}
+
+export interface MatchExplanation {
+  matchId: string;
+  overallScore: number;
+  explanation: string;
+  breakdown: {
+    component: string;
+    score: number;
+    explanation: string;
+    strengths: string[];
+    improvements: string[];
+  }[];
+  recommendation: 'strong_yes' | 'yes' | 'maybe' | 'no';
+  nextSteps: string[];
+}
+
+export interface ResumeAnalysis {
+  resumeId: string;
+  overallScore: number;
+  summary: string;
+  sections: {
+    name: string;
+    score: number;
+    feedback: string;
+    suggestions: string[];
+  }[];
+  keywords: {
+    present: string[];
+    missing: string[];
+    recommended: string[];
+  };
+  atsCompatibility: {
+    score: number;
+    issues: string[];
+    fixes: string[];
+  };
+}
+
+export interface JobComparison {
+  jobs: {
+    jobId: string;
+    title: string;
+    company: string;
+    matchScore: number;
+  }[];
+  comparison: {
+    category: string;
+    winner: string;
+    reasoning: string;
+  }[];
+  recommendation: string;
+  rationale: string;
+}
+
+export interface AIStreamChunk {
+  id: string;
+  conversationId: string;
+  content: string;
+  done: boolean;
+  metadata?: {
+    tokensUsed?: number;
+    modelUsed?: string;
+  };
+}
 
 // ==================== CONFLICT RESOLUTION ====================
 
