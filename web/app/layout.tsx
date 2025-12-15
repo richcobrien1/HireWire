@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import AppInitializer from "@/components/AppInitializer";
+import OfflineBanner from "@/components/OfflineBanner";
+import SyncDebugPanel from "@/components/SyncDebugPanel";
 
 const inter = Inter({
   variable: "--font-geist-sans",
@@ -10,6 +13,13 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "HireWire - Get Hired on the Wire",
   description: "Live hiring, real connections. Gamified job matching that actually works.",
+  manifest: "/manifest.json",
+  themeColor: "#00A8FF",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "HireWire",
+  },
 };
 
 export default function RootLayout({
@@ -22,7 +32,11 @@ export default function RootLayout({
       <body
         className={`${inter.variable} antialiased`}
       >
-        {children}
+        <AppInitializer>
+          <OfflineBanner />
+          {children}
+          <SyncDebugPanel />
+        </AppInitializer>
       </body>
     </html>
   );
