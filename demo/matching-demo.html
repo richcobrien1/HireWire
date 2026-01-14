@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HireWire Matching Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .tagline {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 25px;
+            color: #333;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            color: white;
+            font-weight: bold;
+        }
+
+        .profile-info h3 {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .profile-info p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .skill-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 15px 0;
+        }
+
+        .skill-tag {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .skill-match {
+            background: #10b981;
+            color: white;
+        }
+
+        .skill-partial {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .skill-missing {
+            background: #e5e7eb;
+            color: #666;
+        }
+
+        .skill-extra {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .metric {
+            text-align: center;
+            padding: 15px;
+            background: #f9fafb;
+            border-radius: 12px;
+        }
+
+        .metric-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .metric-label {
+            font-size: 0.9em;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .match-result {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 30px;
+            border-radius: 16px;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .match-score {
+            font-size: 5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .match-label {
+            font-size: 1.5em;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .score-breakdown {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .breakdown-item {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .breakdown-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .breakdown-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: white;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .recommendation {
+            background: #ecfdf5;
+            border-left: 4px solid #10b981;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .recommendation-title {
+            font-weight: bold;
+            color: #059669;
+            margin-bottom: 8px;
+        }
+
+        .recommendation-text {
+            color: #065f46;
+            line-height: 1.6;
+        }
+
+        .controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .btn {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+            margin: 0 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+        }
+
+        .scenario-indicator {
+            text-align: center;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .timer {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.3);
+            padding: 5px 15px;
+            border-radius: 20px;
+            margin-left: 15px;
+            font-weight: bold;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .pulsing {
+            animation: pulse 1s infinite;
+        }
+
+        .experience {
+            margin: 15px 0;
+        }
+
+        .experience-item {
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .experience-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .experience-details {
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        .validation-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .validation-high {
+            background: #10b981;
+            color: white;
+        }
+
+        .validation-medium {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .validation-low {
+            background: #ef4444;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚡ HireWire Matching Engine</h1>
+            <p class="tagline">Real-time AI-powered job matching demonstration</p>
+        </header>
+
+        <div class="scenario-indicator">
+            <span id="scenarioName">Loading scenario...</span>
+            <span class="timer" id="timer">3s</span>
+        </div>
+
+        <div class="demo-grid">
+            <!-- Candidate Card -->
+            <div class="card">
+                <h2>👤 Candidate Profile</h2>
+                <div class="profile-header">
+                    <div class="avatar" id="candidateAvatar">RC</div>
+                    <div class="profile-info">
+                        <h3 id="candidateName">Rich O'Brien</h3>
+                        <p id="candidateTitle">Full Stack Engineer</p>
+                    </div>
+                </div>
+
+                <div class="metrics">
+                    <div class="metric">
+                        <div class="metric-value" id="candidateExp">20</div>
+                        <div class="metric-label">Years Exp</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="candidateValidation">87%</div>
+                        <div class="metric-label">Validation</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="candidateSalary">$160k</div>
+                        <div class="metric-label">Target Salary</div>
+                    </div>
+                </div>
+
+                <h4 style="margin-top: 20px; margin-bottom: 10px; color: #667eea;">Core Skills</h4>
+                <div class="skill-tags" id="candidateSkills"></div>
+
+                <div class="experience">
+                    <h4 style="margin-bottom: 10px; color: #667eea;">Recent Experience</h4>
+                    <div id="candidateExperience"></div>
+                </div>
+            </div>
+
+            <!-- Job Card -->
+            <div class="card">
+                <h2>💼 Job Opening</h2>
+                <div class="profile-header">
+                    <div class="avatar" id="companyAvatar">CF</div>
+                    <div class="profile-info">
+                        <h3 id="companyName">Cloudflare</h3>
+                        <p id="jobTitle">Senior Full Stack Engineer</p>
+                    </div>
+                </div>
+
+                <div class="metrics">
+                    <div class="metric">
+                        <div class="metric-value" id="jobExpRequired">5+</div>
+                        <div class="metric-label">Years Req</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="jobTeamSize">12</div>
+                        <div class="metric-label">Team Size</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value" id="jobSalary">$180k</div>
+                        <div class="metric-label">Salary Range</div>
+                    </div>
+                </div>
+
+                <h4 style="margin-top: 20px; margin-bottom: 10px; color: #667eea;">Required Skills</h4>
+                <div class="skill-tags" id="jobSkills"></div>
+
+                <div style="margin-top: 20px;">
+                    <h4 style="margin-bottom: 10px; color: #667eea;">Job Description</h4>
+                    <p id="jobDescription" style="color: #666; line-height: 1.6;"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Match Result -->
+        <div class="card">
+            <div class="match-result">
+                <div class="match-score" id="matchScore">87%</div>
+                <div class="match-label" id="matchLabel">Excellent Match</div>
+                
+                <div class="score-breakdown">
+                    <div class="breakdown-item">
+                        <div class="breakdown-value" id="skillScore">40%</div>
+                        <div class="breakdown-label">Skill Overlap</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="skillProgress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="breakdown-item">
+                        <div class="breakdown-value" id="expScore">20%</div>
+                        <div class="breakdown-label">Experience Match</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="expProgress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="breakdown-item">
+                        <div class="breakdown-value" id="semanticScore">15%</div>
+                        <div class="breakdown-label">Semantic Similarity</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="semanticProgress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="breakdown-item">
+                        <div class="breakdown-value" id="salaryScore">10%</div>
+                        <div class="breakdown-label">Salary Alignment</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="salaryProgress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="breakdown-item">
+                        <div class="breakdown-value" id="cultureScore">10%</div>
+                        <div class="breakdown-label">Culture Fit</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="cultureProgress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="breakdown-item">
+                        <div class="breakdown-value" id="validationScore">5%</div>
+                        <div class="breakdown-label">Validation Score</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="validationProgress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="recommendation">
+                <div class="recommendation-title">🤖 AI Recommendation</div>
+                <div class="recommendation-text" id="recommendation"></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn" onclick="pauseDemo()">⏸️ Pause</button>
+            <button class="btn" onclick="nextScenario()">⏭️ Next</button>
+            <button class="btn" onclick="resetDemo()">🔄 Reset</button>
+        </div>
+    </div>
+
+    <script>
+        let currentScenario = 0;
+        let isPaused = false;
+        let countdown = 3;
+        let countdownInterval;
+        let scenarioTimeout;
+
+        const scenarios = [
+            {
+                name: "Perfect Match - Senior Full Stack",
+                candidate: {
+                    name: "Rich O'Brien",
+                    avatar: "RO",
+                    title: "Full Stack Engineer",
+                    experience: 20,
+                    validation: 87,
+                    salary: 160,
+                    skills: [
+                        { name: "React", match: true },
+                        { name: "TypeScript", match: true },
+                        { name: "Node.js", match: true },
+                        { name: "PostgreSQL", match: true },
+                        { name: "Docker", match: true },
+                        { name: "Kubernetes", match: true },
+                        { name: "Redis", match: true },
+                        { name: "GraphQL", match: true }
+                    ],
+                    experience_items: [
+                        { title: "Senior Engineer @ TrafficJamz", details: "3 years • Built real-time platform" },
+                        { title: "Lead Developer @ Slicer", details: "5 years • K8s infrastructure" }
+                    ]
+                },
+                job: {
+                    company: "Cloudflare",
+                    avatar: "CF",
+                    title: "Senior Full Stack Engineer",
+                    expRequired: "5+",
+                    teamSize: 12,
+                    salary: 180,
+                    description: "Build next-gen edge computing platform. Work with React, TypeScript, and distributed systems.",
+                    skills: [
+                        { name: "React", required: true },
+                        { name: "TypeScript", required: true },
+                        { name: "Node.js", required: true },
+                        { name: "PostgreSQL", required: true },
+                        { name: "Docker", required: true },
+                        { name: "Kubernetes", required: true },
+                        { name: "Redis", required: false },
+                        { name: "GraphQL", required: false }
+                    ]
+                },
+                match: {
+                    total: 94,
+                    label: "🔥 Exceptional Match",
+                    breakdown: {
+                        skill: 38,
+                        experience: 20,
+                        semantic: 15,
+                        salary: 9,
+                        culture: 9,
+                        validation: 4
+                    },
+                    recommendation: "This is an outstanding match! The candidate has all required skills, extensive experience, and salary expectations align well. Validation score of 87% confirms strong GitHub activity. Recommend immediate interview."
+                }
+            },
+            {
+                name: "Strong Match - Frontend Specialist",
+                candidate: {
+                    name: "Sarah Chen",
+                    avatar: "SC",
+                    title: "Senior Frontend Engineer",
+                    experience: 8,
+                    validation: 92,
+                    salary: 140,
+                    skills: [
+                        { name: "React", match: true },
+                        { name: "TypeScript", match: true },
+                        { name: "Vue.js", match: false },
+                        { name: "Tailwind CSS", match: true },
+                        { name: "GraphQL", match: true },
+                        { name: "Webpack", match: true },
+                        { name: "Jest", match: true },
+                        { name: "Figma", match: false }
+                    ],
+                    experience_items: [
+                        { title: "Senior Frontend @ Stripe", details: "2 years • Payment UI/UX" },
+                        { title: "Frontend Lead @ Notion", details: "3 years • Editor components" }
+                    ]
+                },
+                job: {
+                    company: "Vercel",
+                    avatar: "VR",
+                    title: "Frontend Platform Engineer",
+                    expRequired: "5+",
+                    teamSize: 8,
+                    salary: 160,
+                    description: "Build developer tools for Next.js. Deep React expertise and TypeScript mastery required.",
+                    skills: [
+                        { name: "React", required: true },
+                        { name: "TypeScript", required: true },
+                        { name: "Next.js", required: true },
+                        { name: "Tailwind CSS", required: false },
+                        { name: "GraphQL", required: false },
+                        { name: "Webpack", required: true },
+                        { name: "Jest", required: true },
+                        { name: "Node.js", required: false }
+                    ]
+                },
+                match: {
+                    total: 81,
+                    label: "✨ Strong Match",
+                    breakdown: {
+                        skill: 32,
+                        experience: 17,
+                        semantic: 14,
+                        salary: 8,
+                        culture: 8,
+                        validation: 5
+                    },
+                    recommendation: "Strong candidate with excellent frontend skills. Missing Next.js experience but has React mastery. High validation score (92%) shows strong open-source contributions. Recommend technical interview focused on framework migration experience."
+                }
+            },
+            {
+                name: "Moderate Match - Career Transition",
+                candidate: {
+                    name: "Mike Johnson",
+                    avatar: "MJ",
+                    title: "DevOps Engineer",
+                    experience: 6,
+                    validation: 71,
+                    salary: 135,
+                    skills: [
+                        { name: "Docker", match: true },
+                        { name: "Kubernetes", match: true },
+                        { name: "Terraform", match: false },
+                        { name: "AWS", match: true },
+                        { name: "Python", match: true },
+                        { name: "Bash", match: false },
+                        { name: "Jenkins", match: false },
+                        { name: "Prometheus", match: false }
+                    ],
+                    experience_items: [
+                        { title: "DevOps Engineer @ Databricks", details: "2 years • K8s automation" },
+                        { title: "SRE @ GitHub", details: "3 years • Infrastructure as code" }
+                    ]
+                },
+                job: {
+                    company: "Anthropic",
+                    avatar: "AN",
+                    title: "Backend Platform Engineer",
+                    expRequired: "4+",
+                    teamSize: 15,
+                    salary: 175,
+                    description: "Build ML infrastructure for Claude. Python, distributed systems, and cloud experience essential.",
+                    skills: [
+                        { name: "Python", required: true },
+                        { name: "Docker", required: true },
+                        { name: "Kubernetes", required: true },
+                        { name: "PostgreSQL", required: true },
+                        { name: "AWS", required: true },
+                        { name: "Go", required: false },
+                        { name: "Redis", required: false },
+                        { name: "gRPC", required: false }
+                    ]
+                },
+                match: {
+                    total: 68,
+                    label: "⚡ Moderate Match",
+                    breakdown: {
+                        skill: 24,
+                        experience: 15,
+                        semantic: 12,
+                        salary: 7,
+                        culture: 7,
+                        validation: 4
+                    },
+                    recommendation: "Candidate has strong infrastructure skills but limited backend development experience. Missing PostgreSQL and gRPC. However, DevOps background could be valuable for platform work. Consider for infrastructure-focused backend role or pair with backend mentor."
+                }
+            },
+            {
+                name: "Weak Match - Skill Gap",
+                candidate: {
+                    name: "Emily Rodriguez",
+                    avatar: "ER",
+                    title: "Java Backend Developer",
+                    experience: 5,
+                    validation: 64,
+                    salary: 120,
+                    skills: [
+                        { name: "Java", match: false },
+                        { name: "Spring Boot", match: false },
+                        { name: "MySQL", match: false },
+                        { name: "Docker", match: true },
+                        { name: "AWS", match: false },
+                        { name: "Kafka", match: false },
+                        { name: "MongoDB", match: false },
+                        { name: "REST APIs", match: false }
+                    ],
+                    experience_items: [
+                        { title: "Backend Dev @ Oracle", details: "2 years • Java microservices" },
+                        { title: "Software Engineer @ SAP", details: "3 years • Enterprise apps" }
+                    ]
+                },
+                job: {
+                    company: "Vercel",
+                    avatar: "VR",
+                    title: "Frontend Platform Engineer",
+                    expRequired: "5+",
+                    teamSize: 8,
+                    salary: 160,
+                    description: "Build developer tools for Next.js. Deep React expertise and TypeScript mastery required.",
+                    skills: [
+                        { name: "React", required: true },
+                        { name: "TypeScript", required: true },
+                        { name: "Next.js", required: true },
+                        { name: "Node.js", required: true },
+                        { name: "GraphQL", required: false },
+                        { name: "Webpack", required: true },
+                        { name: "Jest", required: true },
+                        { name: "Docker", required: false }
+                    ]
+                },
+                match: {
+                    total: 43,
+                    label: "❌ Weak Match",
+                    breakdown: {
+                        skill: 8,
+                        experience: 13,
+                        semantic: 6,
+                        salary: 7,
+                        culture: 6,
+                        validation: 3
+                    },
+                    recommendation: "Significant skill mismatch. Candidate has Java/Spring expertise but role requires React/TypeScript. Only Docker overlaps. Experience level matches but wrong tech stack. Not recommended unless candidate is actively learning frontend and can show portfolio work."
+                }
+            },
+            {
+                name: "High Potential - Junior with Validation",
+                candidate: {
+                    name: "Alex Kim",
+                    avatar: "AK",
+                    title: "Junior Full Stack Developer",
+                    experience: 2,
+                    validation: 95,
+                    salary: 95,
+                    skills: [
+                        { name: "React", match: true },
+                        { name: "TypeScript", match: true },
+                        { name: "Node.js", match: true },
+                        { name: "PostgreSQL", match: true },
+                        { name: "Git", match: false },
+                        { name: "REST APIs", match: false },
+                        { name: "Express", match: true },
+                        { name: "TailwindCSS", match: false }
+                    ],
+                    experience_items: [
+                        { title: "Full Stack Dev @ Startup", details: "2 years • Built MVP from scratch" },
+                        { title: "Open Source Contributor", details: "Active • 500+ GitHub stars" }
+                    ]
+                },
+                job: {
+                    company: "Stripe",
+                    avatar: "ST",
+                    title: "Software Engineer",
+                    expRequired: "2+",
+                    teamSize: 6,
+                    salary: 140,
+                    description: "Build payment infrastructure. Looking for strong fundamentals and growth mindset. TypeScript and React experience essential.",
+                    skills: [
+                        { name: "TypeScript", required: true },
+                        { name: "React", required: true },
+                        { name: "Node.js", required: true },
+                        { name: "PostgreSQL", required: true },
+                        { name: "Express", required: true },
+                        { name: "Docker", required: false },
+                        { name: "Redis", required: false },
+                        { name: "GraphQL", required: false }
+                    ]
+                },
+                match: {
+                    total: 79,
+                    label: "🌟 High Potential Match",
+                    breakdown: {
+                        skill: 34,
+                        experience: 12,
+                        semantic: 13,
+                        salary: 10,
+                        culture: 7,
+                        validation: 5
+                    },
+                    recommendation: "Exceptional validation score (95%) indicates highly active developer with strong GitHub presence. Despite junior level, has all core skills required. Salary expectations below budget - room for competitive offer. Strong cultural fit for growth-focused teams. Highly recommend interview."
+                }
+            },
+            {
+                name: "Overqualified - Senior for Mid-Level",
+                candidate: {
+                    name: "David Park",
+                    avatar: "DP",
+                    title: "Engineering Manager",
+                    experience: 15,
+                    validation: 78,
+                    salary: 220,
+                    skills: [
+                        { name: "React", match: true },
+                        { name: "TypeScript", match: true },
+                        { name: "Node.js", match: true },
+                        { name: "System Design", match: false },
+                        { name: "Team Leadership", match: false },
+                        { name: "Python", match: true },
+                        { name: "AWS", match: true },
+                        { name: "Agile", match: false }
+                    ],
+                    experience_items: [
+                        { title: "Engineering Manager @ Meta", details: "5 years • Led 20-person team" },
+                        { title: "Senior Eng @ Google", details: "7 years • Infrastructure" }
+                    ]
+                },
+                job: {
+                    company: "Early Startup",
+                    avatar: "ES",
+                    title: "Mid-Level Full Stack Engineer",
+                    expRequired: "3-5",
+                    teamSize: 3,
+                    salary: 130,
+                    description: "Join small team building MVP. Hands-on coding role, no management responsibilities. Looking for scrappy builder.",
+                    skills: [
+                        { name: "React", required: true },
+                        { name: "TypeScript", required: true },
+                        { name: "Node.js", required: true },
+                        { name: "MongoDB", required: false },
+                        { name: "AWS", required: false },
+                        { name: "Python", required: false }
+                    ]
+                },
+                match: {
+                    total: 56,
+                    label: "⚠️ Overqualified",
+                    breakdown: {
+                        skill: 28,
+                        experience: 8,
+                        semantic: 10,
+                        salary: 2,
+                        culture: 5,
+                        validation: 4
+                    },
+                    recommendation: "Skills match well but major concerns: 1) Salary expectations ($220k) far exceed budget ($130k), 2) 15 years experience for mid-level role suggests overqualification, 3) Management experience may indicate preference for leadership over IC work. Risk of quick departure. Not recommended unless candidate explicitly seeking IC transition."
+                }
+            }
+        ];
+
+        function renderScenario(index) {
+            const scenario = scenarios[index];
+            
+            // Update scenario name
+            document.getElementById('scenarioName').textContent = scenario.name;
+            
+            // Render candidate
+            document.getElementById('candidateAvatar').textContent = scenario.candidate.avatar;
+            document.getElementById('candidateName').textContent = scenario.candidate.name;
+            document.getElementById('candidateTitle').textContent = scenario.candidate.title;
+            document.getElementById('candidateExp').textContent = scenario.candidate.experience;
+            document.getElementById('candidateValidation').textContent = scenario.candidate.validation + '%';
+            document.getElementById('candidateSalary').textContent = '$' + scenario.candidate.salary + 'k';
+            
+            // Render candidate skills
+            const candidateSkillsHTML = scenario.candidate.skills.map(skill => {
+                const matchClass = skill.match ? 'skill-match' : 'skill-extra';
+                return `<span class="skill-tag ${matchClass}">${skill.name}</span>`;
+            }).join('');
+            document.getElementById('candidateSkills').innerHTML = candidateSkillsHTML;
+            
+            // Render candidate experience
+            const candidateExpHTML = scenario.candidate.experience_items.map(exp => {
+                return `
+                    <div class="experience-item">
+                        <div class="experience-title">${exp.title}</div>
+                        <div class="experience-details">${exp.details}</div>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('candidateExperience').innerHTML = candidateExpHTML;
+            
+            // Render job
+            document.getElementById('companyAvatar').textContent = scenario.job.avatar;
+            document.getElementById('companyName').textContent = scenario.job.company;
+            document.getElementById('jobTitle').textContent = scenario.job.title;
+            document.getElementById('jobExpRequired').textContent = scenario.job.expRequired;
+            document.getElementById('jobTeamSize').textContent = scenario.job.teamSize;
+            document.getElementById('jobSalary').textContent = '$' + scenario.job.salary + 'k';
+            document.getElementById('jobDescription').textContent = scenario.job.description;
+            
+            // Render job skills with matching
+            const candidateSkillNames = scenario.candidate.skills.filter(s => s.match).map(s => s.name);
+            const jobSkillsHTML = scenario.job.skills.map(skill => {
+                let matchClass;
+                if (candidateSkillNames.includes(skill.name)) {
+                    matchClass = 'skill-match';
+                } else if (skill.required) {
+                    matchClass = 'skill-missing';
+                } else {
+                    matchClass = 'skill-partial';
+                }
+                return `<span class="skill-tag ${matchClass}">${skill.name}${skill.required ? ' *' : ''}</span>`;
+            }).join('');
+            document.getElementById('jobSkills').innerHTML = jobSkillsHTML;
+            
+            // Render match results with animation
+            setTimeout(() => {
+                document.getElementById('matchScore').textContent = scenario.match.total + '%';
+                document.getElementById('matchLabel').textContent = scenario.match.label;
+                
+                document.getElementById('skillScore').textContent = scenario.match.breakdown.skill + '%';
+                document.getElementById('expScore').textContent = scenario.match.breakdown.experience + '%';
+                document.getElementById('semanticScore').textContent = scenario.match.breakdown.semantic + '%';
+                document.getElementById('salaryScore').textContent = scenario.match.breakdown.salary + '%';
+                document.getElementById('cultureScore').textContent = scenario.match.breakdown.culture + '%';
+                document.getElementById('validationScore').textContent = scenario.match.breakdown.validation + '%';
+                
+                // Animate progress bars
+                document.getElementById('skillProgress').style.width = (scenario.match.breakdown.skill / 40 * 100) + '%';
+                document.getElementById('expProgress').style.width = (scenario.match.breakdown.experience / 20 * 100) + '%';
+                document.getElementById('semanticProgress').style.width = (scenario.match.breakdown.semantic / 15 * 100) + '%';
+                document.getElementById('salaryProgress').style.width = (scenario.match.breakdown.salary / 10 * 100) + '%';
+                document.getElementById('cultureProgress').style.width = (scenario.match.breakdown.culture / 10 * 100) + '%';
+                document.getElementById('validationProgress').style.width = (scenario.match.breakdown.validation / 5 * 100) + '%';
+                
+                document.getElementById('recommendation').textContent = scenario.match.recommendation;
+            }, 300);
+        }
+
+        function nextScenario() {
+            currentScenario = (currentScenario + 1) % scenarios.length;
+            renderScenario(currentScenario);
+            resetTimer();
+        }
+
+        function pauseDemo() {
+            isPaused = !isPaused;
+            const btn = event.target;
+            btn.textContent = isPaused ? '▶️ Resume' : '⏸️ Pause';
+            
+            if (isPaused) {
+                clearInterval(countdownInterval);
+                clearTimeout(scenarioTimeout);
+            } else {
+                resetTimer();
+            }
+        }
+
+        function resetDemo() {
+            currentScenario = 0;
+            renderScenario(currentScenario);
+            resetTimer();
+        }
+
+        function resetTimer() {
+            countdown = 3;
+            document.getElementById('timer').textContent = countdown + 's';
+            
+            clearInterval(countdownInterval);
+            clearTimeout(scenarioTimeout);
+            
+            if (!isPaused) {
+                countdownInterval = setInterval(() => {
+                    countdown--;
+                    document.getElementById('timer').textContent = countdown + 's';
+                    
+                    if (countdown <= 0) {
+                        clearInterval(countdownInterval);
+                    }
+                }, 1000);
+                
+                scenarioTimeout = setTimeout(() => {
+                    if (!isPaused) {
+                        nextScenario();
+                    }
+                }, 3000);
+            }
+        }
+
+        // Start the demo
+        renderScenario(0);
+        resetTimer();
+    </script>
+</body>
+</html>
