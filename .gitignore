@@ -1,0 +1,40 @@
+# HireWire .gitignore
+
+# ChromaDB vector database
+.chromadb/
+ARCHIVE/**/.chromadb/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Testing
+test_db/
+*.test.db
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Archive test data (optional - comment out if you want to track)
+ARCHIVE/resumes/ARCHIVE/
