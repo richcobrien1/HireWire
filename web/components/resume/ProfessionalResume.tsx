@@ -26,12 +26,27 @@ interface ResumeData {
     }>;
     achievements?: string[];
   }>;
+  priorExperience?: Array<{
+    title: string;
+    company: string;
+    duration: string;
+    website?: string;
+    description?: string;
+    projects?: Array<{
+      name: string;
+      description: string;
+      links?: string[];
+    }>;
+    achievements?: string[];
+  }>;
   education: {
     degree: string;
     field: string;
     institution: string;
     note: string;
   };
+  certifications?: string[];
+  coreCompetencies?: string;
 }
 
 export default function ProfessionalResume({ data }: { data: ResumeData }) {
@@ -143,8 +158,65 @@ export default function ProfessionalResume({ data }: { data: ResumeData }) {
         </div>
       </section>
 
+      {/* Prior/Previous Experience (if exists) */}
+      {data.priorExperience && data.priorExperience.length > 0 && (
+        <section className="mb-6">
+          <h2 className="text-sm font-bold border-b-2 border-black pb-1 mb-3">
+            PRIOR IT EXPERIENCE
+          </h2>
+          <div className="space-y-5">
+            {data.priorExperience.map((job, i) => (
+              <div key={i}>
+                <div className="mb-2">
+                  <div className="font-bold text-sm">
+                    Job Title: {job.title}
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-semibold">Company:</span> {job.company}
+                  </div>
+                  <div className="text-sm italic">{job.duration}</div>
+                  {job.website && (
+                    <div className="text-sm">
+                      <a href={`https://${job.website}`} className="text-blue-600 hover:underline">
+                        {job.website}
+                      </a>
+                    </div>
+                  )}
+                </div>
+
+                {job.description && (
+                  <p className="text-sm mb-2">{job.description}</p>
+                )}
+
+                {job.projects && job.projects.length > 0 && (
+                  <div className="text-sm space-y-1.5">
+                    {job.projects.map((project, j) => (
+                      <div key={j}>
+                        <span className="font-semibold">{project.name}:</span> {project.description}
+                        {project.links && project.links.length > 0 && (
+                          <span> ({project.links.join(', ')})</span>
+                        )}
+                        .
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {job.achievements && job.achievements.length > 0 && (
+                  <ul className="text-sm list-disc list-inside space-y-1 mt-2">
+                    {job.achievements.map((achievement, j) => (
+                      <li key={j}>{achievement}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Education */}
-      <section>
+      <section className="mb-6">
         <h2 className="text-sm font-bold border-b-2 border-black pb-1 mb-3">
           EDUCATION
         </h2>
@@ -155,6 +227,34 @@ export default function ProfessionalResume({ data }: { data: ResumeData }) {
           <div className="text-xs mt-1">{data.education.note}</div>
         </div>
       </section>
+
+      {/* Certifications (if exists) */}
+      {data.certifications && data.certifications.length > 0 && (
+        <section className="mb-6">
+          <h2 className="text-sm font-bold border-b-2 border-black pb-1 mb-3">
+            CERTIFICATIONS
+          </h2>
+          <ul className="text-sm space-y-1.5 list-disc list-inside">
+            {data.certifications.map((cert, i) => (
+              <li key={i}>{cert}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Core Competencies (if exists) */}
+      {data.coreCompetencies && (
+        <section className="mb-6">
+          <h2 className="text-sm font-bold border-b-2 border-black pb-1 mb-3">
+            CORE COMPETENCIES
+          </h2>
+          <div className="text-sm">
+            {data.coreCompetencies}
+          </div>
+        </section>
+      )}
+
+      {/* Last section - remove mb-6 from Education if it's truly last */}
     </div>
   );
 }

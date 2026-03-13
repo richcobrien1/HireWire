@@ -142,6 +142,12 @@ class SyncService {
    * Pull latest data from server
    */
   private async pullFromServer(): Promise<void> {
+    // Skip in development if no server configured
+    if (process.env.NODE_ENV === 'development' && !process.env.NEXT_PUBLIC_API_URL) {
+      console.log('[Sync] Skipping server pull in development (no backend configured)');
+      return;
+    }
+    
     // Get last sync timestamp
     const lastSync = await this.getLastSyncTimestamp();
     
@@ -192,6 +198,12 @@ class SyncService {
    * Push local changes to server
    */
   private async pushToServer(): Promise<void> {
+    // Skip in development if no server configured
+    if (process.env.NODE_ENV === 'development' && !process.env.NEXT_PUBLIC_API_URL) {
+      console.log('[Sync] Skipping server push in development (no backend configured)');
+      return;
+    }
+    
     // Get pending operations from queue
     const pending = await getPendingSyncItems();
 
@@ -474,8 +486,8 @@ interface SyncStatus {
 
 export const syncService = new SyncService();
 
-// Auto-start sync service
-if (typeof window !== 'undefined') {
+// Auto-start sync service (only in production)
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
   syncService.start();
 }
 

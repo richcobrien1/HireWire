@@ -1,12 +1,40 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import ProfessionalResume from '@/components/resume/ProfessionalResume';
-import resumeData from '@/lib/data/resume-data.json';
+import TextImporter from '@/components/resume/TextImporter';
+import ATSChecker from '@/components/resume/ATSChecker';
+import JobMatcher from '@/components/resume/JobMatcher';
+import { parseResumeText } from '@/lib/utils/resume-parser';
+import { parseMarkdownResume } from '@/lib/utils/markdown-parser';
 
 export default function DocumentGeneratorPage() {
+  const [mounted, setMounted] = useState(false);
   const resumeRef = useRef<HTMLDivElement>(null);
   const [copySuccess, setCopySuccess] = useState('');
+  // Start with empty data instead of template
+  const [resumeData, setResumeData] = useState({
+    personalInfo: {
+      name: 'Your Name',
+      emails: [],
+      phone: '',
+      location: '',
+      linkedin: '',
+      github: ''
+    },
+    profileSummary: 'Click "Import Text/File" to load your resume',
+    technicalSkills: {},
+    workExperience: [],
+    priorExperience: [],
+    education: {
+      degree: '',
+      field: '',
+      institution: '',
+      note: ''
+    },
+    certifications: [],
+    coreCompetencies: ''
+  });
 
   const handlePrint = () => {
     window.print();
@@ -96,6 +124,86 @@ export default function DocumentGeneratorPage() {
     }
   };
 
+  const handleTextImport = (text: string, isMarkdown = false) => {
+    try {
+      console.log('[Import] Starting import...');
+      console.log('[Import] Text length:', text.length);
+      console.log('[Import] Is markdown:', isMarkdown);
+      
+      // Parse based on format
+      const parsed = isMarkdown 
+        ? parseMarkdownResume(text)
+        : parseResumeText(text);
+      
+      console.log('[Import] ===== PARSED DATA =====');
+      console.log('[Import] Name:', parsed.personalInfo?.name);
+      console.log('[Import] Emails:', parsed.personalInfo?.emails);
+      console.log('[Import] Phone:', parsed.personalInfo?.phone);
+      console.log('[Import] Location:', parsed.personalInfo?.location);
+      console.log('[Import] LinkedIn:', parsed.personalInfo?.linkedin);
+      console.log('[Import] GitHub:', parsed.personalInfo?.github);
+      console.log('[Import] Skills count:', Object.keys(parsed.technicalSkills || {}).length);
+      console.log('[Import] Skills:', Object.keys(parsed.technicalSkills || {}));
+      console.log('[Import] Jobs found:', parsed.workExperience?.length);
+      console.log('[Import] Jobs:', parsed.workExperience?.map(j => `${j.title} at ${j.company}`));
+      console.log('[Import] Prior experience found:', parsed.priorExperience?.length);
+      console.log('[Import] Certifications found:', parsed.certifications?.length);
+      console.log('[Import] Education:', parsed.education);
+      
+      // Use ONLY parsed data (don't fall back to template)
+      const updatedData = {
+        personalInfo: {
+          name: parsed.personalInfo?.name || '',
+          emails: parsed.personalInfo?.emails || [],
+          phone: parsed.personalInfo?.phone || '',
+          location: parsed.personalInfo?.location || '',
+          linkedin: parsed.personalInfo?.linkedin || '',
+          github: parsed.personalInfo?.github || ''
+        },
+        profileSummary: parsed.profileSummary || '',
+        technicalSkills: parsed.technicalSkills || {},
+        workExperience: parsed.workExperience || [],
+        priorExperience: parsed.priorExperience || [],
+        education: {
+          degree: parsed.education?.degree || '',
+          field: parsed.education?.field || '',
+          institution: parsed.education?.institution || '',
+          note: parsed.education?.note || ''
+        },
+        certifications: parsed.certifications || [],
+        coreCompetencies: parsed.coreCompetencies || ''
+      };
+
+      console.log('[Import] ===== FINAL DATA =====');
+      console.log('[Import] Final jobs count:', updatedData.workExperience.length);
+      console.log('[Import] Final prior jobs:', updatedData.priorExperience?.length);
+      console.log('[Import] Final skills count:', Object.keys(updatedData.technicalSkills || {}).length);
+      console.log('[Import] Final certifications:', updatedData.certifications?.length);
+      
+      setResumeData(updatedData as any);
+      setCopySuccess(isMarkdown ? '✅ Markdown imported successfully!' : '✅ Text imported successfully!');
+      setTimeout(() => setCopySuccess(''), 3000);
+    } catch (err) {
+      console.error('Failed to parse resume text:', err);
+      setCopySuccess('Import failed - please check the format');
+      setTimeout(() => setCopySuccess(''), 3000);
+    }
+  };
+
+  // Check if real data has been imported
+  const hasImportedData = 
+    resumeData.personalInfo.name !== 'Your Name' && 
+    resumeData.personalInfo.name.length > 2;
+
+  // Prevent hydration mismatch by only rendering on client
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Control Panel */}
@@ -105,6 +213,8 @@ export default function DocumentGeneratorPage() {
           <p className="text-blue-100 mb-6">Professional documents with instant export</p>
           
           <div className="flex flex-wrap gap-3">
+            <TextImporter onImport={handleTextImport} />
+            
             <button
               onClick={handlePrint}
               className="bg-white text-blue-600 px-6 py-2 rounded-lg font-semibold hover:bg-blue-50 transition-colors shadow-md"
@@ -148,8 +258,49 @@ export default function DocumentGeneratorPage() {
 
       {/* Resume Preview */}
       <div className="py-8 px-4">
-        <div className="max-w-[8.5in] mx-auto bg-white shadow-2xl" ref={resumeRef}>
-          <ProfessionalResume data={resumeData} />
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            {/* Resume Document - Takes 2/3 width on large screens */}
+            <div className="xl:col-span-2">
+              {hasImportedData ? (
+                <div className="max-w-[8.5in] mx-auto bg-white shadow-2xl" ref={resumeRef}>
+                  <ProfessionalResume data={resumeData} />
+                </div>
+              ) : (
+                <div className="max-w-[8.5in] mx-auto bg-white shadow-2xl p-12 text-center">
+                  <div className="text-8xl mb-6 animate-pulse">📄</div>
+                  <h3 className="text-2xl font-bold text-gray-700 mb-4">
+                    No Resume Loaded
+                  </h3>
+                  <p className="text-gray-600 mb-6">
+                    Click the <strong>&quot;📥 Import Text/File&quot;</strong> button above to load your resume.
+                  </p>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                    <h4 className="font-semibold text-blue-900 mb-3">What you can do:</h4>
+                    <ul className="text-left space-y-2 text-blue-800">
+                      <li>✓ Import plain text (.txt) resumes</li>
+                      <li>✓ Import Markdown (.md) resumes</li>
+                      <li>✓ Get instant ATS compliance analysis</li>
+                      <li>✓ Match against job descriptions</li>
+                      <li>✓ Export as PDF or HTML</li>
+                    </ul>
+                  </div>
+                  <div className="mt-6 text-sm text-gray-500">
+                    🔒 Your data stays private • No server uploads • Processed locally
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Analysis Panel - Takes 1/3 width on large screens */}
+            <div className="space-y-6 no-print">
+              {/* ATS Compliance Checker */}
+              <ATSChecker resumeData={resumeData} />
+
+              {/* Job Match Analyzer */}
+              <JobMatcher resumeData={resumeData} />
+            </div>
+          </div>
         </div>
       </div>
 

@@ -14,12 +14,15 @@ export const metadata: Metadata = {
   title: "HireWire - Get Hired on the Wire",
   description: "Live hiring, real connections. Gamified job matching that actually works.",
   manifest: "/manifest.json",
-  themeColor: "#00A8FF",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "HireWire",
   },
+};
+
+export const viewport = {
+  themeColor: "#00A8FF",
 };
 
 export default function RootLayout({

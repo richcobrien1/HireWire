@@ -13,6 +13,11 @@ export function OfflineBanner() {
   const isOnline = useIsOnline();
   const syncStatus = useSyncStatus();
 
+  // Don't show in development (sync is disabled anyway)
+  if (process.env.NODE_ENV === 'development') {
+    return null;
+  }
+
   if (isOnline) {
     return null;
   }

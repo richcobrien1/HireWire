@@ -17,14 +17,18 @@ export function AppInitializer({ children }: { children: React.ReactNode }) {
     const init = async () => {
       console.log('[App] Initializing HireWire...');
 
-      // Register service worker for offline support
-      try {
-        const registration = await registerServiceWorker();
-        if (registration) {
-          console.log('[App] Service worker registered');
+      // Register service worker for offline support (only in production)
+      if (process.env.NODE_ENV === 'production') {
+        try {
+          const registration = await registerServiceWorker();
+          if (registration) {
+            console.log('[App] Service worker registered');
+          }
+        } catch (error) {
+          console.error('[App] Service worker registration failed:', error);
         }
-      } catch (error) {
-        console.error('[App] Service worker registration failed:', error);
+      } else {
+        console.log('[App] Service worker disabled in development');
       }
 
       // Start sync service
