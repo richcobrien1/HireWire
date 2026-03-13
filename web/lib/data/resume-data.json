@@ -1,0 +1,151 @@
+{
+  "personalInfo": {
+    "name": "Richard O'Brien",
+    "emails": [
+      "richcobrien@hotmail.com",
+      "richcobrien@gmail.com",
+      "richcobrien@v2u.us"
+    ],
+    "phone": "720-656-9850",
+    "location": "Centennial, CO 80112",
+    "linkedin": "https://linkedin.com/in/richcobrien",
+    "github": "https://github.com/richcobrien1"
+  },
+  "profileSummary": "EXPERT IN UX/UI DESIGN | WEB DEVELOPMENT | AI-DEVELOPMENT AND AUTOMATION | INFRASTRUCTURE LEADER | 20 YRS DATA CENTER & NETWORK OPERATIONS | 110 GLOBAL SITES | FORTUNE 500 EXPERIENCE\n\nSoftware, Hardware & Web Engineering, UX/UI Design & Development, Systems Engineering, Information Technology Development and Support, Business Operations, Administration and Management, Microsoft Windows, Linux, Mac PCs, POS Hardware, Payments & Checks. 4-Year College Degree – BBA Business Administration.",
+  "technicalSkills": {
+    "ai": "AI Artificial Intelligence: GPT (OpenAI, Claude, Grok, Gemini), CoPilot, VS-Code, GitHub",
+    "languages": "Languages: TypeScript, JavaScript (ES6+), Python, Solidity, SQL",
+    "frontend": "Frontend: Vite, React 16-17, Next.js, Angular 2-14, Vue.js 2-3, Svelte, Polymer",
+    "backend": "Backend: Node.js, Express, Python, GraphQL, REST APIs",
+    "realtime": "Real-time: WebRTC, Socket.IO, WebSockets",
+    "databases": "Databases: PostgreSQL, MongoDB, MySQL, MS SQL, InfluxDB, Redis",
+    "devops": "DevOps: Docker Swarm, AWS, Azure, Vercel, Cloud Foundry",
+    "cicd": "CI/CD: GitHub Actions, GitLab CI, Bitbucket, Maven",
+    "state": "State Management: Ngrx, Redux, Vuex, RxJS, React Hooks",
+    "uiux": "UI/UX: Material UI, Storybook, Bootstrap, SCSS, Vuetify, Figma",
+    "testing": "Testing: Jest, Jasmine, Mocha, Chai, Karma, Cypress, Sonar",
+    "tools": "Tools: Webpack, Babel, Postman, NPM, Yarn, Bower, Grunt, Gulp"
+  },
+  "workExperience": [
+    {
+      "title": "Founder & Principal Engineer",
+      "company": "v2u",
+      "duration": "January 2023 - Present",
+      "website": "www.v2u.us",
+      "description": "website, public, private - internal, administrative, AI Assisted Generation, Management and Maintenance",
+      "projects": [
+        {
+          "name": "AI-Now Deep Dive with Alex and Jessica",
+          "description": "podcast, media automation (Next.js 15, React Server Components, Vercel)",
+          "links": ["Jamz", "TrafficJamz"]
+        },
+        {
+          "name": "TrafficJamz",
+          "description": "real-time location WebRTC voice system, music (Vite, Node.js, MediaSoup SFU, 100+ concurrent users, Socket.IO, React.js, Electron)"
+        },
+        {
+          "name": "Slicer",
+          "description": "AI-powered CAD, 6 Patents Pending (React/Vite, WebGL, Three.js, Electron)"
+        },
+        {
+          "name": "SafeShipping",
+          "description": "crypto platform (WASM, Solidity, Arbitrum L2, IPFS)"
+        },
+        {
+          "name": "Multi-database architecture",
+          "description": "PostgreSQL, MongoDB, Cloudflare R2/KV, InfluxDB, Redis"
+        },
+        {
+          "name": "Custom automation",
+          "description": "GitHub Actions, API integrations, cron scheduling"
+        },
+        {
+          "name": "Performance",
+          "description": "Edge deployment, ISR, SSG, React Server Components, <100ms response"
+        },
+        {
+          "name": "Security",
+          "description": "Auth.js, Clerk, OAuth 2.0, JWT, API rate limiting"
+        }
+      ]
+    },
+    {
+      "title": "Full Stack | UI/UX | DevOps Engineer",
+      "company": "ICF (Contract via Hays)",
+      "duration": "June 2021 - December 2022",
+      "description": "Angular 13, TypeScript 4.5, RxJS 7, Material Design 13, Nx Workspace 13, SCSS, Karma/Jasmine, Storybook 6.4, Azure DevOps, Node.js 16, Python 3.9",
+      "achievements": [
+        "Led design/dev for Medicaid claims processing (5M+ records/month, <200ms query time)",
+        "Architected micro-frontend (13 Angular libs, shared component library, design system)",
+        "Optimized CI/CD (Azure Pipelines, 40% faster builds, automated testing)",
+        "Implemented Figma design system (82 reusable components, Storybook documentation)"
+      ]
+    },
+    {
+      "title": "Senior Software Engineer | UI/UX | Scrum Master",
+      "company": "ePlus (Contract via Yoh)",
+      "duration": "March 2020 - May 2021",
+      "description": "Support/dev for IT asset mgmt platform (Angular 11, Node.js, MongoDB, Material UI)",
+      "achievements": [
+        "Scrum Master: 2-week sprints, backlog refinement, retrospectives, team velocity tracking",
+        "Migrated Angular 7→11 (RxJS 6→7, deprecated APIs, 30% bundle size reduction)",
+        "Built audit logging system (MongoDB change streams, real-time notifications)",
+        "Improved dashboard performance (lazy loading, virtual scrolling, memo, 60% load time)"
+      ]
+    },
+    {
+      "title": "Front End Developer | UI/UX Designer",
+      "company": "Quantum Metric",
+      "duration": "March 2018 - March 2020",
+      "description": "Analytics SaaS platform (Angular 8-10, TypeScript, D3.js, WebSockets, Material Design)",
+      "achievements": [
+        "Real-time dashboards (D3.js, WebSocket streams, 10K+ events/sec, <50ms latency)",
+        "Session replay player (custom video codec, frame-by-frame DOM reconstruction)",
+        "Heatmap visualization (Canvas API, WebGL acceleration, 1M+ interaction points)",
+        "Component library (40+ reusable components, Storybook, design tokens, A11y WCAG AA)"
+      ]
+    },
+    {
+      "title": "Senior Application Developer | UI/UX",
+      "company": "Comcast",
+      "duration": "September 2015 - March 2018",
+      "description": "Angular 2-6, TypeScript, RxJS, Redux, Material Design, Node.js Express, Cloud Foundry",
+      "achievements": [
+        "Customer portal redesign (Angular 4, RxJS state mgmt, OAuth, 2.5M users, 40% load time)",
+        "Micro frontend architecture (8 Angular modules, shared services, CI/CD automation)",
+        "Video streaming integration (HLS.js, adaptive bitrate, DRM, Chromecast)",
+        "A/B testing framework (feature flags, analytics, 15% conversion improvement)"
+      ]
+    },
+    {
+      "title": "UI/UX Web Developer",
+      "company": "Dish Network",
+      "duration": "December 2013 - September 2015",
+      "description": "AngularJS 1.x, Backbone.js, jQuery, Bootstrap, Grunt, SASS, Node.js, REST APIs",
+      "achievements": [
+        "Responsive web app (AngularJS, Material Design, <768px mobile-first, 50% mobile users)",
+        "Payment gateway (Stripe.js, PCI compliance, fraud detection, $10M/month)",
+        "Customer account mgmt (RESTful APIs, OAuth 2.0, session mgmt, 500K users)",
+        "Build automation (Grunt, SASS, minification, linting, 70% faster deploys)"
+      ]
+    },
+    {
+      "title": "Web Developer",
+      "company": "Time Warner Cable",
+      "duration": "November 2011 - December 2013",
+      "description": "jQuery, Backbone.js, Bootstrap, PHP, MySQL, Apache, Photoshop, responsive design",
+      "achievements": [
+        "Customer portal (jQuery, Bootstrap, PHP backend, MySQL, 1M+ users)",
+        "Bill pay system (payment APIs, transaction logging, email notifications)",
+        "Service outage map (Google Maps API, real-time updates, geolocation)",
+        "CMS integration (WordPress, custom themes, ACF, REST API)"
+      ]
+    }
+  ],
+  "education": {
+    "degree": "Bachelor of Business Administration (BBA)",
+    "field": "Business Administration",
+    "institution": "4-Year College Degree",
+    "note": "Relevant coursework in project management, business operations, and organizational leadership"
+  }
+}
