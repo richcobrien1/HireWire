@@ -486,8 +486,10 @@ interface SyncStatus {
 
 export const syncService = new SyncService();
 
-// Auto-start sync service (only in production)
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
+// Auto-start sync service (only in production AND when backend API is configured)
+if (typeof window !== 'undefined' && 
+    process.env.NODE_ENV === 'production' && 
+    process.env.NEXT_PUBLIC_API_URL) {
   syncService.start();
 }
 
