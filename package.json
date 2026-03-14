@@ -1,0 +1,11 @@
+{
+  "name": "hirewire",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "cd web && npm run dev",
+    "build": "cd web && npm run build",
+    "start": "cd web && npm start",
+    "vercel-build": "cd web && npm install && npm run build"
+  }
+}
