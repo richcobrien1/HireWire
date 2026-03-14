@@ -13,8 +13,13 @@ export function OfflineBanner() {
   const isOnline = useIsOnline();
   const syncStatus = useSyncStatus();
 
-  // Don't show in development (sync is disabled anyway)
+  // Don't show in development
   if (process.env.NODE_ENV === 'development') {
+    return null;
+  }
+
+  // Don't show if no backend API is configured (standalone mode)
+  if (!process.env.NEXT_PUBLIC_API_URL) {
     return null;
   }
 

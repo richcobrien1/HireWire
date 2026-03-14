@@ -31,9 +31,13 @@ export function AppInitializer({ children }: { children: React.ReactNode }) {
         console.log('[App] Service worker disabled in development');
       }
 
-      // Start sync service
-      syncService.start();
-      console.log('[App] Sync service started');
+      // Start sync service (only if backend API is configured)
+      if (process.env.NEXT_PUBLIC_API_URL) {
+        syncService.start();
+        console.log('[App] Sync service started');
+      } else {
+        console.log('[App] Sync service disabled (no backend configured)');
+      }
 
       // Set up automatic backups
       const cleanupBackup = setupAutoBackup();
