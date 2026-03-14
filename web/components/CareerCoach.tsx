@@ -37,8 +37,10 @@ export default function CareerCoach() {
     
     try {
       const conversationId = await startAIConversation('career_coach', {
-        profileId: profile?.id,
-        context: 'career_guidance',
+        context: { 
+          type: 'career_guidance',
+          profileId: profile?.id 
+        },
       });
       setActiveConversationId(conversationId);
     } catch (error) {

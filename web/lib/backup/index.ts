@@ -56,7 +56,7 @@ export class BackupService {
   async exportEntity<T extends keyof typeof db>(
     entityType: T
   ): Promise<string> {
-    const table = db[entityType];
+    const table = db[entityType] as any;
     const data = await table.toArray();
     
     const exportData = {
@@ -331,7 +331,7 @@ export class RecoveryService {
       }
 
       // Clear existing data
-      const table = db[entityType as keyof typeof db];
+      const table = db[entityType as keyof typeof db] as any;
       if (!table) {
         throw new Error(`Unknown entity type: ${entityType}`);
       }

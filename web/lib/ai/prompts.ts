@@ -88,40 +88,45 @@ Always refer to the user's actual data (profile, matches, activity) when availab
  */
 export function buildCareerContextPrompt(profile: Profile, careerContext?: CareerContext): string {
   let prompt = `USER PROFILE:\n`;
-  prompt += `- Name: ${profile.displayName}\n`;
+  prompt += `- Name: ${profile.fullName}\n`;
   prompt += `- Location: ${profile.location || 'Not specified'}\n`;
-  prompt += `- Bio: ${profile.bio || 'Not provided'}\n\n`;
+  prompt += `- Bio: ${profile.summary || 'Not provided'}\n\n`;
+
+  // Skills from profile
+  if (profile.skills && profile.skills.length > 0) {
+    const topSkills = profile.skills.slice(0, 10);
+    prompt += `- Top Skills: ${topSkills.map(s => s.name).join(', ')}\n`;
+  }
+
+  // Experience from profile
+  if (profile.experience && profile.experience.length > 0) {
+    prompt += `- Experience:\n`;
+    profile.experience.forEach(exp => {
+      prompt += `  * ${exp.title} at ${exp.company} (${exp.startDate} - ${exp.endDate || 'Present'})\n`;
+    });
+  }
 
   if (careerContext) {
-    prompt += `CAREER CONTEXT:\n`;
-    
-    // Skills
-    if (careerContext.skills && careerContext.skills.length > 0) {
-      const topSkills = careerContext.skills.slice(0, 10);
-      prompt += `- Top Skills: ${topSkills.map(s => `${s.name} (${s.yearsOfExperience}y, proficiency: ${s.proficiencyLevel}/5)`).join(', ')}\n`;
-    }
-
-    // Experience
-    if (careerContext.experiences && careerContext.experiences.length > 0) {
-      prompt += `- Experience:\n`;
-      careerContext.experiences.forEach(exp => {
-        prompt += `  * ${exp.title} at ${exp.company} (${exp.startDate} - ${exp.endDate || 'Present'})\n`;
-      });
-    }
+    prompt += `\nCAREER CONTEXT:\n`;
 
     // Career goals
-    if (careerContext.careerGoals) {
-      prompt += `- Career Goals: ${careerContext.careerGoals}\n`;
+    if (careerContext.fiveYearGoals && careerContext.fiveYearGoals.length > 0) {
+      prompt += `- Career Goals: ${careerContext.fiveYearGoals.join(', ')}\n`;
     }
 
     // Learning interests
-    if (careerContext.learningInterests && careerContext.learningInterests.length > 0) {
-      prompt += `- Learning Interests: ${careerContext.learningInterests.join(', ')}\n`;
+    if (careerContext.learningPriorities && careerContext.learningPriorities.length > 0) {
+      prompt += `- Learning Interests: ${careerContext.learningPriorities.join(', ')}\n`;
     }
 
     // Work preferences
-    if (careerContext.workEnvironmentPreferences && careerContext.workEnvironmentPreferences.length > 0) {
-      prompt += `- Work Preferences: ${careerContext.workEnvironmentPreferences.join(', ')}\n`;
+    if (careerContext.workStylePreferences && careerContext.workStylePreferences.length > 0) {
+      prompt += `- Work Preferences: ${careerContext.workStylePreferences.join(', ')}\n`;
+    }
+    
+    // Ideal work environment
+    if (careerContext.idealWorkEnvironment) {
+      prompt += `- Ideal Work Environment: ${careerContext.idealWorkEnvironment}\n`;
     }
   }
 
@@ -133,23 +138,26 @@ export function buildCareerContextPrompt(profile: Profile, careerContext?: Caree
  */
 export function buildMatchContextPrompt(match: Match, job: Job): string {
   let prompt = `MATCH DETAILS:\n`;
-  prompt += `- Overall Score: ${match.overallScore}%\n`;
+  prompt += `- Overall Score: ${match.matchScore}%\n`;
   prompt += `- Match Status: ${match.status}\n\n`;
 
   prompt += `SCORE BREAKDOWN:\n`;
-  prompt += `- Skills Match: ${match.scores.skillsMatch}%\n`;
-  prompt += `- Career Fit: ${match.scores.careerFit}%\n`;
-  prompt += `- Culture Fit: ${match.scores.cultureFit}%\n`;
-  prompt += `- Learning Potential: ${match.scores.learningPotential}%\n`;
-  prompt += `- Motivation Alignment: ${match.scores.motivationAlignment}%\n`;
-  prompt += `- Experience Match: ${match.scores.experienceMatch}%\n\n`;
+  prompt += `- Skills Match: ${match.matchBreakdown.skillsMatch}%\n`;
+  prompt += `- Career Fit: ${match.matchBreakdown.careerFit}%\n`;
+  prompt += `- Culture Fit: ${match.matchBreakdown.cultureFit}%\n`;
+  prompt += `- Learning Opportunity: ${match.matchBreakdown.learningOpportunity}%\n`;
+  prompt += `- Motivation Alignment: ${match.matchBreakdown.motivationAlignment}%\n`;
+  prompt += `- Experience Level: ${match.matchBreakdown.experienceLevel}%\n\n`;
 
   prompt += `JOB DETAILS:\n`;
   prompt += `- Title: ${job.title}\n`;
-  prompt += `- Company: ${job.companyName}\n`;
   prompt += `- Location: ${job.location}\n`;
-  prompt += `- Salary Range: ${job.salaryRange || 'Not specified'}\n`;
-  prompt += `- Work Type: ${job.workType}\n`;
+  const salaryRange = job.salaryMin && job.salaryMax 
+    ? `${job.salaryCurrency} ${job.salaryMin.toLocaleString()} - ${job.salaryMax.toLocaleString()}`
+    : 'Not specified';
+  prompt += `- Salary Range: ${salaryRange}\n`;
+  prompt += `- Work Type: ${job.remoteType} / ${job.employmentType}\n`;
+  prompt += `- Experience Level: ${job.experienceLevel}\n`;
   prompt += `- Description: ${job.description}\n\n`;
 
   if (job.requirements && job.requirements.length > 0) {
@@ -159,8 +167,12 @@ export function buildMatchContextPrompt(match: Match, job: Job): string {
     });
   }
 
-  if (job.skills && job.skills.length > 0) {
-    prompt += `- Required Skills: ${job.skills.join(', ')}\n`;
+  if (job.requiredSkills && job.requiredSkills.length > 0) {
+    prompt += `- Required Skills: ${job.requiredSkills.join(', ')}\n`;
+  }
+  
+  if (job.preferredSkills && job.preferredSkills.length > 0) {
+    prompt += `- Preferred Skills: ${job.preferredSkills.join(', ')}\n`;
   }
 
   return prompt;
@@ -245,7 +257,7 @@ export function buildMatchExplanationPrompt(
   prompt += '\n' + buildMatchContextPrompt(match, job);
 
   prompt += `\nExplain this match to the candidate. Focus on:\n`;
-  prompt += `1. Why the match score is ${match.overallScore}%\n`;
+  prompt += `1. Why the match score is ${match.matchScore}%\n`;
   prompt += `2. Specific strengths that align with the role\n`;
   prompt += `3. Growth opportunities this job offers\n`;
   prompt += `4. Any concerns or gaps to address\n`;
@@ -266,8 +278,9 @@ export function buildResumeAnalysisPrompt(
 
   if (profile) {
     prompt += `CANDIDATE BACKGROUND:\n`;
-    prompt += `- Name: ${profile.displayName}\n`;
-    prompt += `- Current role level: ${profile.experience || 'Not specified'}\n\n`;
+    prompt += `- Name: ${profile.fullName}\n`;
+    const currentRole = profile.experience?.[0]?.title || profile.title || 'Not specified';
+    prompt += `- Current role level: ${currentRole}\n\n`;
   }
 
   if (targetRoles && targetRoles.length > 0) {
@@ -304,11 +317,14 @@ export function buildJobComparisonPrompt(
 
   prompt += `\nJOBS TO COMPARE:\n`;
   jobs.forEach((item, idx) => {
-    prompt += `\n[Job ${idx + 1}] ${item.job.title} at ${item.job.companyName}\n`;
-    prompt += `- Match Score: ${item.match?.overallScore || 'N/A'}%\n`;
-    prompt += `- Salary: ${item.job.salaryRange || 'Not specified'}\n`;
+    const jobSalary = item.job.salaryMin && item.job.salaryMax 
+      ? `${item.job.salaryCurrency} ${item.job.salaryMin.toLocaleString()} - ${item.job.salaryMax.toLocaleString()}`
+      : 'Not specified';
+    prompt += `\n[Job ${idx + 1}] ${item.job.title}\n`;
+    prompt += `- Match Score: ${item.match?.matchScore || 'N/A'}%\n`;
+    prompt += `- Salary: ${jobSalary}\n`;
     prompt += `- Location: ${item.job.location}\n`;
-    prompt += `- Work Type: ${item.job.workType}\n`;
+    prompt += `- Work Type: ${item.job.remoteType} / ${item.job.employmentType}\n`;
     prompt += `- Description: ${item.job.description.substring(0, 200)}...\n`;
   });
 
@@ -378,18 +394,27 @@ export function buildCareerTipPrompt(
  */
 export function buildSkillSuggestionPrompt(
   careerContext: CareerContext,
-  targetJobs: Job[]
+  targetJobs: Job[],
+  profile?: Profile
 ): string {
   let prompt = `Analyze skill gaps and suggest learning priorities.\n\n`;
   
-  prompt += `CURRENT SKILLS:\n`;
-  careerContext.skills?.forEach(skill => {
-    prompt += `- ${skill.name} (${skill.yearsOfExperience}y, level ${skill.proficiencyLevel}/5)\n`;
-  });
+  if (profile?.skills && profile.skills.length > 0) {
+    prompt += `CURRENT SKILLS:\n`;
+    profile.skills.forEach(skill => {
+      prompt += `- ${skill.name}\n`;
+    });
+    prompt += `\n`;
+  }
 
-  prompt += `\nTARGET JOBS:\n`;
+  prompt += `TARGET JOBS:\n`;
   targetJobs.forEach(job => {
-    prompt += `- ${job.title}: requires ${job.skills?.join(', ')}\n`;
+    const jobSkills = [...(job.requiredSkills || []), ...(job.preferredSkills || [])];
+    if (jobSkills.length > 0) {
+      prompt += `- ${job.title}: requires ${jobSkills.join(', ')}\n`;
+    } else {
+      prompt += `- ${job.title}\n`;
+    }
   });
 
   prompt += `\nGenerate 3-5 skill learning suggestions that:\n`;

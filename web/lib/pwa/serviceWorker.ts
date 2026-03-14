@@ -41,7 +41,7 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
 
     // Register for background sync if supported
     if ('sync' in registration) {
-      await registration.sync.register('sync-hirewire-data');
+      await (registration as any).sync.register('sync-hirewire-data');
       console.log('[SW] Background sync registered');
     }
 
@@ -101,7 +101,7 @@ export async function triggerSync(): Promise<void> {
     const registration = await navigator.serviceWorker.ready;
     
     if ('sync' in registration) {
-      await registration.sync.register('sync-hirewire-data');
+      await (registration as any).sync.register('sync-hirewire-data');
       console.log('[SW] Background sync triggered');
     } else {
       console.log('[SW] Background sync not supported');
@@ -156,7 +156,7 @@ export async function subscribeToPushNotifications(): Promise<PushSubscription |
       
       subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as BufferSource,
       });
       
       console.log('[Push] Subscribed:', subscription.endpoint);

@@ -19,7 +19,7 @@ import type {
   AIConversation,
   AIMessage,
   AISuggestion,
-} from './types';
+} from '../types';
 
 // Define the database schema
 export class HireWireDB extends Dexie {
@@ -59,17 +59,17 @@ export class HireWireDB extends Dexie {
     });
 
     // Add hooks for automatic timestamping
-    this.profiles.hook('creating', (primKey, obj) => {
+    this.profiles.hook('creating', (primKey, obj: any) => {
       if (!obj.createdAt) obj.createdAt = Date.now();
       if (!obj.updatedAt) obj.updatedAt = Date.now();
     });
 
-    this.profiles.hook('updating', (modifications, primKey, obj) => {
+    this.profiles.hook('updating', (modifications: any, primKey, obj) => {
       modifications.updatedAt = Date.now();
       return modifications;
     });
 
-    this.messages.hook('creating', (primKey, obj) => {
+    this.messages.hook('creating', (primKey, obj: any) => {
       if (!obj.timestamp) obj.timestamp = Date.now();
     });
   }
