@@ -24,6 +24,7 @@ interface ResumeData {
   workExperience: Array<{
     title: string;
     company: string;
+    location?: string;
     duration: string;
     description?: string;
     projects?: string[];
@@ -32,6 +33,7 @@ interface ResumeData {
   priorExperience?: Array<{
     title: string;
     company: string;
+    location?: string;
     duration: string;
     description?: string;
     achievements?: string[];
@@ -126,9 +128,10 @@ function calculateYearsOfExperience(workExperience: any[]): number {
 
   for (const job of workExperience) {
     const duration = job.duration;
+    if (!duration) continue;
     
-    // Parse date ranges like "Jan 2020 - Dec 2023" or "2020 - 2023"
-    const yearMatch = duration.match(/(\d{4})\s*[-–]\s*(\d{4}|Present)/i);
+    // Parse date ranges like "Jan 2020 - Dec 2023", "2020 - 2023", "January 2020 to December 2023"
+    const yearMatch = duration.match(/(\d{4})\s*(?:[-–]|to)\s*(\d{4}|Present)/i);
     if (yearMatch) {
       const startYear = parseInt(yearMatch[1]);
       const endYear = yearMatch[2].toLowerCase() === 'present' ? new Date().getFullYear() : parseInt(yearMatch[2]);
@@ -173,7 +176,11 @@ export function matchResumeToJob(
     : 0;
 
   // Experience analysis (30% of total score)
-  const yearsOfExperience = calculateYearsOfExperience(resumeData.workExperience || []);
+  const allExperience = [
+    ...(resumeData.workExperience || []),
+    ...(resumeData.priorExperience || [])
+  ];
+  const yearsOfExperience = calculateYearsOfExperience(allExperience);
   const jobDescLower = jobDescription.toLowerCase();
   
   let experienceScore = 0;
@@ -181,7 +188,7 @@ export function matchResumeToJob(
   const relevantRoles: string[] = [];
 
   // Check if job titles match
-  resumeData.workExperience?.forEach(job => {
+  allExperience.forEach(job => {
     if (jobDescLower.includes(job.title.toLowerCase()) ||
         job.title.toLowerCase().split(' ').some(word => jobDescLower.includes(word))) {
       hasRelevant = true;

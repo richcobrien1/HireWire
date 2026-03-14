@@ -16,6 +16,7 @@ interface ResumeData {
   workExperience: Array<{
     title: string;
     company: string;
+    location?: string;
     duration: string;
     website?: string;
     description?: string;
@@ -29,6 +30,7 @@ interface ResumeData {
   priorExperience?: Array<{
     title: string;
     company: string;
+    location?: string;
     duration: string;
     website?: string;
     description?: string;
@@ -118,6 +120,11 @@ export default function ProfessionalResume({ data }: { data: ResumeData }) {
                 <div className="text-sm">
                   <span className="font-semibold">Company:</span> {job.company}
                 </div>
+                {job.location && (
+                  <div className="text-sm">
+                    <span className="font-semibold">Location:</span> {job.location}
+                  </div>
+                )}
                 <div className="text-sm italic">{job.duration}</div>
                 {job.website && (
                   <div className="text-sm">
@@ -174,6 +181,11 @@ export default function ProfessionalResume({ data }: { data: ResumeData }) {
                   <div className="text-sm">
                     <span className="font-semibold">Company:</span> {job.company}
                   </div>
+                  {job.location && (
+                    <div className="text-sm">
+                      <span className="font-semibold">Location:</span> {job.location}
+                    </div>
+                  )}
                   <div className="text-sm italic">{job.duration}</div>
                   {job.website && (
                     <div className="text-sm">

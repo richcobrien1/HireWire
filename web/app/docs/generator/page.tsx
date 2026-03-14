@@ -126,29 +126,10 @@ export default function DocumentGeneratorPage() {
 
   const handleTextImport = (text: string, isMarkdown = false) => {
     try {
-      console.log('[Import] Starting import...');
-      console.log('[Import] Text length:', text.length);
-      console.log('[Import] Is markdown:', isMarkdown);
-      
       // Parse based on format
       const parsed = isMarkdown 
         ? parseMarkdownResume(text)
         : parseResumeText(text);
-      
-      console.log('[Import] ===== PARSED DATA =====');
-      console.log('[Import] Name:', parsed.personalInfo?.name);
-      console.log('[Import] Emails:', parsed.personalInfo?.emails);
-      console.log('[Import] Phone:', parsed.personalInfo?.phone);
-      console.log('[Import] Location:', parsed.personalInfo?.location);
-      console.log('[Import] LinkedIn:', parsed.personalInfo?.linkedin);
-      console.log('[Import] GitHub:', parsed.personalInfo?.github);
-      console.log('[Import] Skills count:', Object.keys(parsed.technicalSkills || {}).length);
-      console.log('[Import] Skills:', Object.keys(parsed.technicalSkills || {}));
-      console.log('[Import] Jobs found:', parsed.workExperience?.length);
-      console.log('[Import] Jobs:', parsed.workExperience?.map(j => `${j.title} at ${j.company}`));
-      console.log('[Import] Prior experience found:', parsed.priorExperience?.length);
-      console.log('[Import] Certifications found:', parsed.certifications?.length);
-      console.log('[Import] Education:', parsed.education);
       
       // Use ONLY parsed data (don't fall back to template)
       const updatedData = {
@@ -173,12 +154,6 @@ export default function DocumentGeneratorPage() {
         certifications: parsed.certifications || [],
         coreCompetencies: parsed.coreCompetencies || ''
       };
-
-      console.log('[Import] ===== FINAL DATA =====');
-      console.log('[Import] Final jobs count:', updatedData.workExperience.length);
-      console.log('[Import] Final prior jobs:', updatedData.priorExperience?.length);
-      console.log('[Import] Final skills count:', Object.keys(updatedData.technicalSkills || {}).length);
-      console.log('[Import] Final certifications:', updatedData.certifications?.length);
       
       setResumeData(updatedData as any);
       setCopySuccess(isMarkdown ? '✅ Markdown imported successfully!' : '✅ Text imported successfully!');
@@ -209,7 +184,7 @@ export default function DocumentGeneratorPage() {
       {/* Control Panel */}
       <div className="no-print bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 shadow-lg">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold mb-2">HireWire Document Studio</h1>
+          <h1 className="text-3xl font-bold mb-2">HireWire Resume Studio</h1>
           <p className="text-blue-100 mb-6">Professional documents with instant export</p>
           
           <div className="flex flex-wrap gap-3">

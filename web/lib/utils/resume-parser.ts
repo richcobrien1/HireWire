@@ -17,6 +17,7 @@ interface ParsedResume {
   workExperience: Array<{
     title: string;
     company: string;
+    location?: string;
     duration: string;
     description?: string;
     achievements?: string[];
@@ -24,6 +25,7 @@ interface ParsedResume {
   priorExperience?: Array<{
     title: string;
     company: string;
+    location?: string;
     duration: string;
     description?: string;
     achievements?: string[];
@@ -122,87 +124,51 @@ export function parseResumeText(text: string): Partial<ParsedResume> {
   // Extract sections
   const sections = extractSections(text);
   
-  console.log('[Parser] ===== SECTIONS EXTRACTED =====');
-  console.log('[Parser] Total sections found:', sections.length);
-  sections.forEach((section, i) => {
-    console.log(`[Parser] Section ${i}: "${section.title}" (${section.content.length} chars)`);
-    console.log(`[Parser] Content preview:`, section.content.substring(0, 100));
-  });
-
-  // Parse profile/summary - Match SUMMARY, PROFILE, etc.
+  // Parse profile/summary
   const summarySection = sections.find(s => 
     /summary|profile|objective/i.test(s.title)
   );
-  console.log('[Parser] Summary section found?', !!summarySection);
   if (summarySection) {
-    console.log('[Parser] Summary title:', summarySection.title);
-    console.log('[Parser] Summary content length:', summarySection.content.length);
-    console.log('[Parser] Summary content:', summarySection.content.substring(0, 200));
     result.profileSummary = summarySection.content.trim();
   }
 
-  // Parse skills - Match SKILLS, TECHNICAL SKILLS, etc.
+  // Parse skills
   const skillsSection = sections.find(s => 
     /skills?|competencies|expertise/i.test(s.title)
   );
-  console.log('[Parser] Skills section found?', !!skillsSection);
   if (skillsSection) {
-    console.log('[Parser] Skills title:', skillsSection.title);
-    console.log('[Parser] Skills content length:', skillsSection.content.length);
-    console.log('[Parser] Skills content preview:', skillsSection.content.substring(0, 200));
     result.technicalSkills = parseSkills(skillsSection.content);
-    console.log('[Parser] Parsed skills count:', Object.keys(result.technicalSkills).length);
-    console.log('[Parser] Parsed skills:', Object.keys(result.technicalSkills));
   }
 
-  // Parse work experience - Match EXPERIENCE, WORK EXPERIENCE, etc.
+  // Parse work experience
   const experienceSection = sections.find(s => 
     /experience|employment|work.*history/i.test(s.title) && !/prior|previous/i.test(s.title)
   );
-  console.log('[Parser] Work Experience section found?', !!experienceSection);
   if (experienceSection) {
-    console.log('[Parser] Work Experience title:', experienceSection.title);
-    console.log('[Parser] Work Experience content length:', experienceSection.content.length);
-    console.log('[Parser] Work Experience content preview:', experienceSection.content.substring(0, 200));
     result.workExperience = parseWorkExperience(experienceSection.content);
-    console.log('[Parser] Parsed work experience jobs:', result.workExperience.length);
   }
 
-  // Parse prior/previous experience - Match PRIOR IT EXPERIENCE, etc.
+  // Parse prior/previous experience
   const priorSection = sections.find(s => 
     /prior|previous|earlier/i.test(s.title)
   );
-  console.log('[Parser] Prior Experience section found?', !!priorSection);
   if (priorSection) {
-    console.log('[Parser] Prior Experience title:', priorSection.title);
-    console.log('[Parser] Prior Experience content length:', priorSection.content.length);
-    console.log('[Parser] Prior Experience content preview:', priorSection.content.substring(0, 300));
     result.priorExperience = parseWorkExperience(priorSection.content);
-    console.log('[Parser] Parsed prior experience jobs:', result.priorExperience.length);
-    if (result.priorExperience.length > 0) {
-      console.log('[Parser] First prior job:', result.priorExperience[0]);
-    }
   }
 
-  // Parse education - Match EDUCATION
+  // Parse education
   const educationSection = sections.find(s => 
     /education|academic/i.test(s.title)
   );
-  console.log('[Parser] Education section found?', !!educationSection);
-  if (educationSection) {
-    console.log('[Parser] Education title:', educationSection.title);
-    console.log('[Parser] Education content:', educationSection.content);
-  }
   if (educationSection && result.education) {
     const eduData = parseEducation(educationSection.content);
     result.education = eduData;
   }
 
-  // Parse certifications - Match CERTIFICATIONS
+  // Parse certifications
   const certSection = sections.find(s => 
     /certif|credential|license/i.test(s.title)
   );
-  console.log('[Parser] Certifications section found?', !!certSection);
   if (certSection) {
     result.certifications = parseCertifications(certSection.content);
   }
@@ -220,54 +186,56 @@ export function parseResumeText(text: string): Partial<ParsedResume> {
 
 function extractSections(text: string): Array<{ title: string; content: string }> {
   const sections: Array<{ title: string; content: string }> = [];
-  const lines = text.split('\n');
   
-  let currentSection: { title: string; content: string } | null = null;
-  // Match section headers: all caps, 3+ letters, may have spaces/slashes/ampersands/dashes
-  const sectionHeaderRegex = /^([A-Z][A-Z\s&/\-]{2,})$/;
-  // Skip underscore divider lines
-  const dividerRegex = /^_{5,}$/;
-
-  console.log('[extractSections] Processing', lines.length, 'lines');
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-    
-    // Skip divider lines
-    if (dividerRegex.test(trimmed)) {
-      console.log('[extractSections] Skipping divider line');
-      continue;
-    }
-    
-    // Check if this is a section header (all caps, reasonable length)
-    if (sectionHeaderRegex.test(trimmed) && trimmed.length < 100) {
-      if (currentSection) {
-        console.log('[extractSections] Saving section:', currentSection.title, 'with', currentSection.content.length, 'chars');
-        sections.push(currentSection);
+  // Normalize line endings
+  let normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  
+  // Try splitting by underscores first
+  let parts = normalized.split(/_{20,}/);
+  
+  // Known section headers that should be recognized (with optional descriptive text after)
+  const knownSections = /^(SUMMARY|PROFILE|OBJECTIVE|SKILLS?|TECHNICAL\s+SKILLS?|CORE\s+COMPETENCIES|EXPERIENCE|WORK\s+EXPERIENCE|EMPLOYMENT|PROFESSIONAL\s+EXPERIENCE|PRIOR\s+(IT\s+)?EXPERIENCE|PREVIOUS\s+EXPERIENCE|EDUCATION|ACADEMIC|CERTIFICATIONS?|CREDENTIALS?|LICENSES?|AWARDS?|PUBLICATIONS?|PROJECTS?|VOLUNTEER)(\s*[-–—:]\s*.+)?$/i;
+  
+  if (parts.length > 1) {
+    // Has underscore dividers
+    for (let i = 1; i < parts.length; i++) {
+      const part = parts[i].trim();
+      if (!part) continue;
+      
+      const lines = part.split('\n');
+      const title = lines[0].replace(/:$/, '').trim();
+      const content = lines.slice(1).join('\n').replace(/([a-z,])\n\s{10,}([a-z])/g, '$1 $2').replace(/\s{2,}/g, ' ').trim();
+      
+      if (title && content) {
+        sections.push({ title, content });
       }
-      console.log('[extractSections] Found new section header:', trimmed);
-      currentSection = { title: trimmed, content: '' };
-    } else if (currentSection && trimmed) {
-      currentSection.content += line + '\n';
+    }
+  } else {
+    // No underscore dividers - parse by section headers
+    const lines = normalized.split('\n');
+    let currentSection: { title: string; content: string } | null = null;
+    
+    for (const line of lines) {
+      const trimmed = line.trim();
+      
+      // Only match KNOWN section headers, not random all-caps text like company names
+      if (knownSections.test(trimmed.replace(/:$/, ''))) {
+        if (currentSection && currentSection.content) {
+          sections.push(currentSection);
+        }
+        currentSection = { 
+          title: trimmed.replace(/:$/, ''),
+          content: '' 
+        };
+      } else if (currentSection && trimmed) {
+        currentSection.content += line + '\n';
+      }
+    }
+    
+    if (currentSection && currentSection.content) {
+      sections.push(currentSection);
     }
   }
-
-  if (currentSection) {
-    console.log('[extractSections] Saving final section:', currentSection.title, 'with', currentSection.content.length, 'chars');
-    sections.push(currentSection);
-  }
-
-  console.log('[extractSections] Total sections extracted:', sections.length);
-  
-  // Unwrap hard-wrapped lines within each section's content
-  sections.forEach(section => {
-    // Join lines that are split mid-word (lowercase to lowercase continuation)
-    // But preserve intentional line breaks (bullets, blank lines, etc.)
-    section.content = section.content
-      .replace(/([a-z,])\s*\n\s+([a-z])/g, '$1 $2')  // Join wrapped lines (indented continuation)
-      .replace(/\s{2,}/g, ' ')  // Clean up excessive spaces
-      .trim();
-  });
   
   return sections;
 }
@@ -301,6 +269,7 @@ function parseSkills(content: string): Record<string, string> {
 function parseWorkExperience(content: string): Array<{
   title: string;
   company: string;
+  location?: string;
   duration: string;
   description?: string;
   achievements?: string[];
@@ -308,153 +277,116 @@ function parseWorkExperience(content: string): Array<{
   const jobs: Array<{
     title: string;
     company: string;
+    location?: string;
     duration: string;
     description?: string;
     achievements?: string[];
   }> = [];
 
-  const lines = content.split('\n').map(l => l.trim());
+  const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
   
-  let currentJob: any = null;
-  let previousLineWasBullet = false;
+  // Pattern to detect section headers that shouldn't be treated as job data
+  const sectionHeaderPattern = /^(SUMMARY|PROFILE|OBJECTIVE|SKILLS?|TECHNICAL\s+SKILLS?|CORE\s+COMPETENCIES|EXPERIENCE|WORK\s+EXPERIENCE|EMPLOYMENT|PROFESSIONAL\s+EXPERIENCE|PRIOR\s+(IT\s+)?EXPERIENCE|PREVIOUS\s+EXPERIENCE|EDUCATION|ACADEMIC|CERTIFICATIONS?|CREDENTIALS?|LICENSES?|AWARDS?|PUBLICATIONS?|PROJECTS?|VOLUNTEER)(\s*[-–—:]\s*.+)?$/i;
   
-  const saveCurrentJob = () => {
-    if (currentJob && currentJob.title && currentJob.company) {
-      jobs.push({
-        title: currentJob.title,
-        company: currentJob.company,
-        duration: currentJob.duration || 'Dates not specified',
-        achievements: currentJob.achievements.length > 0 ? currentJob.achievements : undefined
-      });
-    }
-  };
-  
-  const isSkipableLine = (line: string) => {
-    return line.startsWith('Tech Stack:') || 
-           line.startsWith('Development Tools:') || 
-           line.startsWith('DevOps:') || 
-           line.startsWith('Tools:');
-  };
-  
-  for (let i = 0; i < lines.length; i++) {
+  let i = 0;
+  while (i < lines.length) {
     const line = lines[i];
     
-    if (!line) {
-      previousLineWasBullet = false;
+    // Skip section headers
+    if (sectionHeaderPattern.test(line)) {
+      i++;
       continue;
     }
     
-    const isBullet = line.match(/^[•\-*\t]/);
-    const nextLine = i + 1 < lines.length ? lines[i + 1] : '';
-    const hasDatePattern = /\d{4}|present|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec/i.test(line);
-    
-    // Skip tech stack lines
-    if (isSkipableLine(line)) {
+    // Skip bullets
+    if (/^[-*•]/.test(line)) {
+      i++;
       continue;
     }
     
-    // Check for explicit "Job Title:" or "Title:" pattern
-    if (/^(job\s+)?title:\s*/i.test(line)) {
-      saveCurrentJob();
-      
-      const titleValue = line.replace(/^(job\s+)?title:\s*/i, '').trim();
-      currentJob = {
-        title: titleValue,
-        company: '',
-        duration: '',
-        achievements: []
-      };
-      previousLineWasBullet = false;
+    // Skip lines that ARE date ranges (prevent date from being treated as company name)
+    // Date format: "Month Year to Month Year" or "Month Year - Present" etc.
+    if (/^(January|February|March|April|May|June|July|August|September|October|November|December|\d{1,2}\/\d{4})/i.test(line) && 
+        /(to|–|—|-)\s*(present|\d{4}|January|February|March|April|May|June|July|August|September|October|November|December)/i.test(line)) {
+      i++;
       continue;
     }
     
-    // Check for explicit "Company:" pattern
-    if (currentJob && /^company:\s*/i.test(line)) {
-      currentJob.company = line.replace(/^company:\s*/i, '').trim();
-      previousLineWasBullet = false;
-      continue;
-    }
-    
-    // Detect new job: non-bullet line after we've collected bullets for current job
-    // This indicates a new job title is starting
-    if (!isBullet && 
-        currentJob && 
-        currentJob.achievements.length > 0 && 
-        previousLineWasBullet &&
-        !line.includes('|') &&
-        !hasDatePattern &&
-        line.length < 100) {
-      
-      // Save the previous job
-      saveCurrentJob();
-      
-      // Start new job
-      currentJob = {
-        title: line,
-        company: '',
-        duration: '',
-        achievements: []
-      };
-      previousLineWasBullet = false;
-      continue;
-    }
-    
-    // If no current job and not a bullet, start first job
-    if (!currentJob && !isBullet && !isSkipableLine(line) && !hasDatePattern) {
-      currentJob = {
-        title: line,
-        company: '',
-        duration: '',
-        achievements: []
-      };
-      previousLineWasBullet = false;
-      continue;
-    }
-    
-    if (!currentJob) {
-      previousLineWasBullet = !!isBullet;
-      continue;
-    }
-    
-    // Line with pipe separator = company line (PRIORITIZE THIS CHECK)
-    // This handles formats like: "TekSystems (Pfizer Corporation) | San Diego, CA"
-    if (!currentJob.company && line.includes('|')) {
-      const parts = line.split('|').map(p => p.trim());
-      currentJob.company = parts[0];
-      previousLineWasBullet = false;
-      continue;
-    }
-    
-    // Bullet point (achievement)
-    if (isBullet) {
-      const cleaned = line.replace(/^[•\-*\t]+\s*/, '').trim();
-      if (cleaned.length > 0 && !isSkipableLine(cleaned)) {
-        currentJob.achievements.push(cleaned);
+    // Look ahead up to 5 lines for a date pattern (year or "present")
+    let hasDateAhead = false;
+    let dateLineOffset = 0;
+    for (let offset = 1; offset <= 5 && i + offset < lines.length; offset++) {
+      if (/\d{4}|present/i.test(lines[i + offset]) && !/^[-*•]/.test(lines[i + offset])) {
+        hasDateAhead = true;
+        dateLineOffset = offset;
+        break;
       }
-      previousLineWasBullet = true;
-      continue;
     }
     
-    // Line with date = duration (only if we have a title already)
-    if (currentJob.title && !currentJob.duration && hasDatePattern) {
-      currentJob.duration = line;
-      previousLineWasBullet = false;
-      continue;
+    if (hasDateAhead && !/^[-*•]/.test(line) && line.length > 0) {
+      // This is a job block starting with company name
+      const company = line;
+      i++;
+      
+      // Next should be title
+      const title = lines[i] || '';
+      i++;
+      
+      // Skip employment type line if present (Full-time | Remote, Part-time, Contract, etc.)
+      if (lines[i] && /full-time|part-time|contract|remote|hybrid|on-site/i.test(lines[i]) && !/\d{4}/.test(lines[i])) {
+        i++;
+      }
+      
+      // Capture location/metadata lines BEFORE date (can be "City, State" OR "Self-Employed | City, State")
+      let location = '';
+      if (lines[i] && !/\d{4}/.test(lines[i]) && 
+          (/^[A-Z][a-z]+(?:[\s-][A-Z][a-z]+)*,\s*[A-Z]{2}$/i.test(lines[i]) || 
+           lines[i].includes('|') ||
+           /^self-employed|freelance|independent/i.test(lines[i]))) {
+        location = lines[i]; // Capture the location
+        i++;
+      }
+      
+      // Get date/duration
+      let duration = '';
+      if (lines[i] && /\d{4}|present/i.test(lines[i])) {
+        duration = lines[i];
+        i++;
+      }
+      
+      // Skip any additional metadata lines AFTER date (rare, but handle it)
+      while (i < lines.length && 
+             !/^[-*•]/.test(lines[i]) && 
+             (lines[i].includes('|') || /^self-employed|freelance|independent/i.test(lines[i])) &&
+             !/\d{4}/.test(lines[i]) &&
+             !/job title:/i.test(lines[i])) {
+        i++;
+      }
+      
+      // Collect bullet point achievements
+      const achievements: string[] = [];
+      while (i < lines.length && /^[-*•]/.test(lines[i])) {
+        const cleaned = lines[i].replace(/^[-*•]\s*/, '').trim();
+        if (cleaned) {
+          achievements.push(cleaned);
+        }
+        i++;
+      }
+      
+      if (title && company) {
+        jobs.push({ 
+          title, 
+          company, 
+          location: location || undefined,
+          duration, 
+          achievements: achievements.length > 0 ? achievements : undefined 
+        });
+      }
+    } else {
+      i++;
     }
-    
-    // If we have title but no company, non-bullet, non-date line = company
-    if (currentJob.title && !currentJob.company && !isBullet && !hasDatePattern) {
-      currentJob.company = line;
-      previousLineWasBullet = false;
-      continue;
-    }
-    
-    previousLineWasBullet = !!isBullet;
   }
   
-  // Save the last job
-  saveCurrentJob();
-
   return jobs;
 }
 

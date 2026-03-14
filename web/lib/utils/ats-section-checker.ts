@@ -17,6 +17,7 @@ interface ResumeData {
   workExperience: Array<{
     title: string;
     company: string;
+    location?: string;
     duration: string;
     description?: string;
     achievements?: string[];
@@ -24,6 +25,7 @@ interface ResumeData {
   priorExperience?: Array<{
     title: string;
     company: string;
+    location?: string;
     duration: string;
     achievements?: string[];
   }>;
@@ -411,12 +413,12 @@ function checkExperienceSection(data: ResumeData): SectionResult {
 
   // Calculate averages and add to score
   const jobCount = allExperience.length;
-  result.score += Math.min(10, totalDateFormatScore / jobCount);
-  result.score += Math.min(10, totalTitleScore / jobCount);
-  result.score += Math.min(10, totalCompanyScore / jobCount);
-  result.score += Math.min(20, totalAchievementsScore / jobCount);
-  result.score += Math.min(15, totalActionVerbScore / jobCount);
-  result.score += Math.min(15, totalQuantifiableScore / jobCount);
+  result.score += Math.round(Math.min(10, totalDateFormatScore / jobCount));
+  result.score += Math.round(Math.min(10, totalTitleScore / jobCount));
+  result.score += Math.round(Math.min(10, totalCompanyScore / jobCount));
+  result.score += Math.round(Math.min(20, totalAchievementsScore / jobCount));
+  result.score += Math.round(Math.min(15, totalActionVerbScore / jobCount));
+  result.score += Math.round(Math.min(15, totalQuantifiableScore / jobCount));
 
   result.passed = result.score >= 70;
   result.score = Math.min(result.score, 100);

@@ -32,6 +32,12 @@ export default function Home() {
             >
               For Companies
             </a>
+            <a
+              href="/docs/generator"
+              className="px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-lg transition-all transform hover:scale-105 shadow-lg"
+            >
+              📄 Resume Studio
+            </a>
           </div>
 
           {/* Features Grid */}
@@ -74,6 +80,43 @@ export default function Home() {
             <div className="text-center">
               <div className="text-4xl font-bold text-[var(--success)] mb-2">10x</div>
               <div className="text-[var(--text-muted)]">Better Than ATS</div>
+            </div>
+          </div>
+
+          {/* Free Tools Section */}
+          <div className="mt-24 bg-gradient-to-br from-purple-900/30 to-blue-900/30 rounded-2xl p-12 border border-purple-500/20">
+            <div className="text-4xl mb-4 text-center">📄</div>
+            <h2 className="text-3xl font-bold mb-4 text-center bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+              Resume Studio - Free Tool
+            </h2>
+            <p className="text-lg text-[var(--text-secondary)] mb-6 text-center max-w-2xl mx-auto">
+              Upload your resume and get instant ATS analysis, job matching scores, and professional formatting. 
+              No signup required!
+            </p>
+            <div className="grid md:grid-cols-3 gap-6 mb-8">
+              <div className="text-center">
+                <div className="text-2xl mb-2">✅</div>
+                <h4 className="font-bold mb-1 text-purple-300">ATS Score</h4>
+                <p className="text-sm text-[var(--text-muted)]">Get a grade on your resume's ATS compatibility</p>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl mb-2">🎯</div>
+                <h4 className="font-bold mb-1 text-blue-300">Job Matching</h4>
+                <p className="text-sm text-[var(--text-muted)]">See how well you match job descriptions</p>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl mb-2">✨</div>
+                <h4 className="font-bold mb-1 text-green-300">Pro Format</h4>
+                <p className="text-sm text-[var(--text-muted)]">Generates a clean, professional resume</p>
+              </div>
+            </div>
+            <div className="text-center">
+              <a
+                href="/docs/generator"
+                className="inline-block px-10 py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold rounded-lg transition-all transform hover:scale-105 shadow-xl"
+              >
+                Try Resume Studio Now →
+              </a>
             </div>
           </div>
 
